@@ -39,13 +39,14 @@ class Theme:
     F_JUMBO   = (FONT_FAMILY, 16, "bold")
 
 
-def draw_rounded_rect(canvas, x1, y1, x2, y2, r, color):
-    canvas.create_oval(x1, y1, x1+2*r, y1+2*r, fill=color, outline=color)
-    canvas.create_oval(x2-2*r, y1, x2, y1+2*r, fill=color, outline=color)
-    canvas.create_oval(x1, y2-2*r, x1+2*r, y2, fill=color, outline=color)
-    canvas.create_oval(x2-2*r, y2-2*r, x2, y2, fill=color, outline=color)
-    canvas.create_rectangle(x1+r, y1, x2-r, y2, fill=color, outline=color)
-    canvas.create_rectangle(x1, y1+r, x2, y2-r, fill=color, outline=color)
+# --- PERBAIKAN DI SINI (Menambahkan tags=None) ---
+def draw_rounded_rect(canvas, x1, y1, x2, y2, r, color, tags=None):
+    canvas.create_oval(x1, y1, x1+2*r, y1+2*r, fill=color, outline=color, tags=tags)
+    canvas.create_oval(x2-2*r, y1, x2, y1+2*r, fill=color, outline=color, tags=tags)
+    canvas.create_oval(x1, y2-2*r, x1+2*r, y2, fill=color, outline=color, tags=tags)
+    canvas.create_oval(x2-2*r, y2-2*r, x2, y2, fill=color, outline=color, tags=tags)
+    canvas.create_rectangle(x1+r, y1, x2-r, y2, fill=color, outline=color, tags=tags)
+    canvas.create_rectangle(x1, y1+r, x2, y2-r, fill=color, outline=color, tags=tags)
 
 def draw_icon(canvas, x, y, type, color):
     w = 3

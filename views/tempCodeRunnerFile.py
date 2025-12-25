@@ -1,125 +1,238 @@
-import tkinter as tk
-from tkinter import messagebox
-import sys, os
+import customtkinter as ctk
+import tkinter.messagebox as msgbox
+import platform
 
+# ==========================================
+# BAGIAN 1: KONFIGURASI TEMA & OS
+# ==========================================
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from theme import Theme, draw_rounded_rect, draw_icon, draw_nav_icon
+os_name = platform.system()
+if os_name == "Windows":
+    FONT_FAMILY = "Segoe UI"
+    try:
+        from ctypes import windll
+        windll.shcore.SetProcessDpiAwareness(1)
+    except:
+        pass
+else:
+    FONT_FAMILY = "DejaVu Sans"
 
-class HomeView:
-    def __init__(self, canvas, width, height, on_navigate):
-        self.canvas, self.W, self.H, self.navigate = canvas, width, height, on_navigate
+class Theme:
+    PRIMARY   = "#00C853"  # Hijau Utama
+    BG        = "#F0F2F5"  # Background Window
+    WHITE     = "#FFFFFF"
+    TEXT      = "#2D3436"  
+    MUTED     = "#636E72"  
+    INPUT_BG  = "#E8F5E9"  
+    HOVER_BTN = "#00E676"  
+    
+    F_HEAD    = (FONT_FAMILY, 30, "bold") 
+    F_SUB     = (FONT_FAMILY, 16)         
+    F_TITLE   = (FONT_FAMILY, 11, "bold") 
+    F_BODY    = (FONT_FAMILY, 12)         
+    F_BTN     = (FONT_FAMILY, 13, "bold")
 
-    def draw(self):
-        self.canvas.delete("all")
+# ==========================================
+# BAGIAN 2: APLIKASI UTAMA
+# ==========================================
+
+ctk.set_appearance_mode("light")
+ctk.set_default_color_theme("green") 
+
+class ESakuApp(ctk.CTk):
+    def __init__(self):
+        super().__init__()
+
+        self.W, self.H = 520, 930 
+        self.geometry(f"{self.W}x{self.H}")
+        self.title("E-SAKU - Solusi Saku Digital") 
+        self.resizable(False, False)
+
+        self.main_container = ctk.CTkFrame(self, fg_color=Theme.BG)
+        self.main_container.pack(fill="both", expand=True)
+
+        self.show_welcome_page()
+
+    def clear_frame(self):
+        for widget in self.main_container.winfo_children():
+            widget.destroy()
+
+    # --- HELPER UI ---
+    def create_back_button(self, parent):
+        btn = ctk.CTkButton(
+            parent, text="←", width=45, height=45, corner_radius=22.5,         
+            fg_color=Theme.WHITE, text_color=Theme.PRIMARY, hover_color="#FAFAFA",
+            font=(FONT_FAMILY, 24, "bold"), command=self.show_welcome_page
+        )
+        btn.place(x=25, y=25) 
+
+    def create_header_bg(self, height):
+        header = ctk.CTkFrame(self.main_container, fg_color=Theme.PRIMARY, height=height, corner_radius=0)
+        header.pack(fill="x", side="top")
         
-        # --- HEADER ---
-        self.canvas.create_rectangle(0, 0, self.W, 260, fill=Theme.PRIMARY, outline="")
-        self.draw_btn_avatar(50, 70, "A", lambda: self.navigate("profile"))
+        # PERBAIKAN BUG HIASAN REGISTER
+        # Posisi digeser sedikit ke atas dan kanan (x=340, y=-100) agar tidak terpotong kartu putih
+        ctk.CTkLabel(header, text="", width=250, height=250, fg_color="#00E676", corner_radius=125).place(x=340, y=-100)
+        return header
+
+    # ================= PAGE 1: WELCOME SCREEN =================
+    def show_welcome_page(self):
+        self.clear_frame()
         
-        self.canvas.create_text(110, 70, text="Halo, Ahmad", anchor="w", font=Theme.F_HEAD, fill=Theme.WHITE)
-        self.canvas.create_text(110, 95, text="Gold Member", anchor="w", font=Theme.F_SMALL, fill="#E8F5E9")
+        bg = ctk.CTkFrame(self.main_container, fg_color=Theme.PRIMARY, corner_radius=0)
+        bg.pack(fill="both", expand=True)
+
+        ctk.CTkLabel(bg, text="", width=300, height=300, fg_color="#00E676", corner_radius=150).place(x=-100, y=-50)
+
+        center_frame = ctk.CTkFrame(bg, fg_color="transparent")
+        center_frame.place(relx=0.5, rely=0.4, anchor="center")
+
+        ctk.CTkLabel(center_frame, text="E-SAKU", font=(FONT_FAMILY, 48, "bold"), text_color="white").pack()
+        ctk.CTkLabel(center_frame, text="Solusi Saku Digital", font=Theme.F_SUB, text_color="#E8F5E9").pack(pady=5)
+
+        bottom_frame = ctk.CTkFrame(bg, fg_color="transparent")
+        bottom_frame.place(relx=0.5, rely=0.85, anchor="center", relwidth=1)
+
+        ctk.CTkButton(
+            bottom_frame, text="Masuk Akun",
+            fg_color=Theme.WHITE, text_color=Theme.PRIMARY,
+            hover_color="#F1F8E9", height=55, corner_radius=27,
+            font=Theme.F_BTN, command=self.show_login_page
+        ).pack(pady=10, ipadx=30)
+
+        ctk.CTkButton(
+            bottom_frame, text="Buka Rekening Baru",
+            fg_color="transparent", text_color=Theme.WHITE,
+            border_width=2, border_color=Theme.WHITE,
+            hover_color=Theme.HOVER_BTN, height=55, corner_radius=27,
+            font=Theme.F_BTN, command=self.show_register_page
+        ).pack(pady=5, ipadx=10)
         
-        self.canvas.create_oval(self.W-60, 70, self.W-50, 80, fill=Theme.IC_RED, outline=Theme.WHITE, width=2)
-        self.canvas.create_text(self.W-70, 75, text="Notif", anchor="e", font=Theme.F_SMALL, fill=Theme.WHITE)
+        ctk.CTkLabel(bg, text="v1.4 (Final UI Fix)", font=(FONT_FAMILY, 10), text_color="#C8E6C9").place(relx=0.5, rely=0.97, anchor="center")
 
-        # --- LOGIKA KEUANGAN ---
-        limit, masuk, saldo = 40000000, 5000000, 2500000
-        keluar = masuk - saldo
+    # ================= PAGE 2: LOGIN (PERBAIKAN) =================
+    def show_login_page(self):
+        self.clear_frame()
+
+        header = self.create_header_bg(height=320)
+        self.create_back_button(header)
         
-        # Hitung Persen & Format String
-        p_masuk = int((masuk / limit) * 100)
-        p_keluar = int((keluar / masuk) * 100)
-        str_saldo = f"Rp {saldo:,.0f}".replace(",", ".")
+        # PERBAIKAN 2: Teks Header Bahasa Indonesia
+        ctk.CTkLabel(
+            header, text="Selamat Datang di\nE-SAKU", 
+            font=Theme.F_HEAD, text_color="white", justify="center"
+        ).place(relx=0.5, rely=0.45, anchor="center")
 
-        # ---  KARTU SALDO ---
-        draw_rounded_rect(self.canvas, 40, 145, self.W-40, 315, 25, Theme.SHADOW)
-        draw_rounded_rect(self.canvas, 40, 140, self.W-40, 310, 25, Theme.WHITE)
-        self.canvas.create_text(70, 185, text="Total Saldo Aktif", anchor="w", font=Theme.F_BODY, fill=Theme.MUTED)
-        self.canvas.create_text(70, 235, text=str_saldo, anchor="w", font=Theme.F_SALDO, fill=Theme.TEXT)
+        card = ctk.CTkFrame(self.main_container, fg_color=Theme.WHITE, corner_radius=30)
+        card.place(relx=0.5, rely=0.6, anchor="center", relwidth=0.9, relheight=0.55) 
 
-        # --- KARTU STATISTIK ---
-        y, w = 340, (self.W - 100) / 2
-        self.draw_stat_card(40, y, w, "Pemasukan", masuk, Theme.INCOME, "up", p_masuk)
-        self.draw_stat_card(40+w+20, y, w, "Pengeluaran", keluar, Theme.EXPENSE, "down", p_keluar)
+        content = ctk.CTkFrame(card, fg_color="transparent")
+        content.pack(fill="both", expand=True, padx=30, pady=30)
 
-        # ---  MENU LAYANAN ---
-        self.canvas.create_text(40, 530, text="Layanan Keuangan", anchor="w", font=Theme.F_TITLE, fill=Theme.TEXT)
-        menus = [
-            ("Top Up", Theme.BTN_GREEN, Theme.IC_GREEN, "plus", "fitur_topup"),
-            ("Transfer", Theme.BTN_BLUE, Theme.IC_BLUE, "arrow_r", "fitur_transfer"),
-            ("Tarik", Theme.BTN_ORANGE, Theme.IC_ORANGE, "arrow_d", "fitur_tarik"),
-            ("Pulsa", Theme.BTN_RED, Theme.IC_RED, "phone", "fitur_pulsa"),
-            ("Listrik", Theme.BTN_YELLOW, Theme.IC_YELLOW, "lightning", "fitur_listrik"),
-            ("Lainnya", Theme.BTN_PURPLE, Theme.IC_PURPLE, "dots", None)
-        ]
+        # Input Form (Label otomatis rata kiri berkat update fungsi create_label di bawah)
+        self.create_label(content, "ID Pengguna (HP / Email)")
+        self.entry_user = self.create_entry(content, "08xx / nama@email.com")
 
-        col_w, y_menu = self.W / 3, 600
-        for i, (lbl, bg, col, icon, cmd) in enumerate(menus):
-            x = ((i % 3) * col_w) + (col_w / 2)
-            y = y_menu + ((i // 3) * 110)
-            tag = f"btn_{lbl}"
-            
-            self.draw_btn_menu(x, y, bg, col, icon, lbl, tag)
-            action = lambda e, t=cmd: self.navigate(t) if t else messagebox.showinfo("Info", "Belum tersedia")
-            self.canvas.tag_bind(tag, "<Button-1>", action)
+        self.create_label(content, "Password / PIN", pady=20) 
+        self.entry_pass = self.create_entry(content, "********", show="*")
 
-        # ---  NAVIGASI BAWAH ---
-        self.draw_bottom_nav()
+        ctk.CTkButton(content, text="Lupa Password?", fg_color="transparent", text_color=Theme.PRIMARY, font=Theme.F_TITLE, hover=False, width=0, anchor="e").pack(fill="x", pady=(5, 20))
 
-    # --- HELPERS (Fungsi Gambar) ---
+        ctk.CTkButton(
+            content, text="LOGIN SEKARANG", fg_color=Theme.PRIMARY, hover_color=Theme.HOVER_BTN,
+            height=55, corner_radius=27, font=Theme.F_BTN,
+            command=self.dummy_login_action
+        ).pack(fill="x")
 
-    def draw_stat_card(self, x, y, w, title, val, color, arrow, pct):
-        draw_rounded_rect(self.canvas, x, y, x+w, y+150, 20, Theme.WHITE)
+        footer = ctk.CTkFrame(content, fg_color="transparent")
+        footer.pack(side="bottom", pady=15)
+        ctk.CTkLabel(footer, text="Belum punya akun?", font=Theme.F_BODY, text_color="gray").pack(side="left")
+        ctk.CTkButton(footer, text="Daftar", fg_color="transparent", text_color=Theme.PRIMARY, font=Theme.F_TITLE, hover=False, width=30, command=self.show_register_page).pack(side="left", padx=5)
+
+    # ================= PAGE 3: REGISTER =================
+    def show_register_page(self):
+        self.clear_frame()
+
+        header = self.create_header_bg(height=250)
+        self.create_back_button(header)
         
-        # Icon Panah
-        self.canvas.create_oval(x+20, y+20, x+50, y+50, fill=Theme.BG, outline="")
-        cx, cy = x+35, y+35
-        pts = [cx, cy+6, cx, cy-6, cx-4, cy-2, cx, cy-6, cx+4, cy-2, cx, cy-6] if arrow=="up" else \
-              [cx, cy-6, cx, cy+6, cx-4, cy+2, cx, cy+6, cx+4, cy+2, cx, cy+6]
-        self.canvas.create_line(pts, fill=color, width=2)
+        ctk.CTkLabel(
+            header, text="Registrasi E-SAKU", 
+            font=Theme.F_HEAD, text_color="white"
+        ).place(relx=0.5, rely=0.4, anchor="center")
 
-        # Teks
-        amount = f"Rp {val:,.0f}".replace(",", ".")
-        self.canvas.create_text(x+20, y+75, text=title, anchor="w", font=Theme.F_BODY, fill=Theme.MUTED)
-        self.canvas.create_text(x+20, y+100, text=amount, anchor="w", font=Theme.F_JUMBO, fill=Theme.TEXT)
-        
-        # Stik Bar
-        bx1, by1, bx2, by2 = x+20, y+130, x+w-20, y+135
-        draw_rounded_rect(self.canvas, bx1, by1, bx2, by2, 2, "#E0E0E0")
-        if pct > 0:
-            fw = (bx2-bx1) * (min(pct, 100)/100)
-            draw_rounded_rect(self.canvas, bx1, by1, bx1+fw, by2, 2, color)
-        self.canvas.create_text(bx2, by1-10, text=f"{pct}%", anchor="e", font=("Arial", 9, "bold"), fill=color)
+        card = ctk.CTkFrame(self.main_container, fg_color=Theme.WHITE, corner_radius=30)
+        card.place(relx=0.5, rely=0.6, anchor="center", relwidth=0.9, relheight=0.72)
 
-    def draw_btn_menu(self, x, y, bg, col, icon, lbl, tag):
-        self.canvas.create_oval(x-35, y-35, x+35, y+35, fill=bg, outline="", tags=tag)
-        draw_icon(self.canvas, x, y, icon, col)
-        self.canvas.create_text(x, y+50, text=lbl, font=Theme.F_BTN, fill=Theme.TEXT, tags=tag)
-        self.add_hover(tag)
+        content = ctk.CTkFrame(card, fg_color="transparent")
+        content.pack(fill="both", expand=True, padx=25, pady=25)
 
-    def draw_btn_avatar(self, x, y, char, cmd):
-        tag = "btn_avatar"
-        self.canvas.create_oval(x-30, y-30, x+30, y+30, fill=Theme.WHITE, outline="", tags=tag)
-        self.canvas.create_text(x, y, text=char, font=("Arial", 20, "bold"), fill=Theme.PRIMARY, tags=tag)
-        self.canvas.tag_bind(tag, "<Button-1>", lambda e: cmd())
-        self.add_hover(tag)
+        # Helper Input khusus Register (Agar label rata kiri)
+        def add_input(label, placeholder, is_pass=False):
+            # Penambahan anchor="w" di sini agar rata kiri
+            ctk.CTkLabel(content, text=label, font=Theme.F_TITLE, text_color=Theme.MUTED, anchor="w").pack(fill="x", pady=(8, 0))
+            entry = ctk.CTkEntry(
+                content, placeholder_text=placeholder,
+                font=Theme.F_BODY, text_color=Theme.TEXT,
+                fg_color=Theme.INPUT_BG, border_width=0, corner_radius=10,
+                height=42, show="*" if is_pass else ""
+            )
+            entry.pack(fill="x", pady=(2, 0))
+            return entry
 
-    def draw_bottom_nav(self):
-        y_bg, cw = self.H - 90, self.W / 3
-        self.canvas.create_rectangle(0, y_bg, self.W, self.H, fill=Theme.WHITE, outline="#EEEEEE")
-        
-        navs = [("Home","home",None), ("Riwayat","history","history"), ("Setelan","settings","profile")]
-        for i, (lbl, icon, target) in enumerate(navs):
-            x = (i * cw) + (cw / 2)
-            col = Theme.PRIMARY if i == 0 else "#CFD8DC"
-            tag = f"nav_{lbl}"
-            draw_nav_icon(self.canvas, x, self.H-55, icon, col, tag)
-            self.canvas.create_text(x, self.H-25, text=lbl, font=Theme.F_SMALL, fill=col, tags=tag)
-            if target:
-                self.canvas.tag_bind(tag, "<Button-1>", lambda e, t=target: self.navigate(t))
-                self.add_hover(tag)
+        self.reg_nama = add_input("Nama Lengkap", "Sesuai KTP")
+        self.reg_hp = add_input("No. WhatsApp", "08xxxxxxxxxx")
+        self.reg_email = add_input("Email", "email@domain.com")
+        self.reg_pass1 = add_input("Password", "Min. 8 karakter", True)
 
-    def add_hover(self, tag):
-        self.canvas.tag_bind(tag, "<Enter>", lambda e: self.canvas.config(cursor="hand2"))
-        self.canvas.tag_bind(tag, "<Leave>", lambda e: self.canvas.config(cursor=""))
+        self.check_var = ctk.StringVar(value="off")
+        ctk.CTkCheckBox(
+            content, text="Saya setuju dengan S&K E-SAKU",
+            variable=self.check_var, onvalue="on", offvalue="off",
+            font=Theme.F_TITLE, text_color="gray", fg_color=Theme.PRIMARY,
+            border_width=2, checkbox_width=20, checkbox_height=20
+        ).pack(fill="x", pady=(20, 10))
+
+        ctk.CTkButton(
+            content, text="BUAT AKUN", fg_color=Theme.PRIMARY, hover_color=Theme.HOVER_BTN,
+            height=55, corner_radius=27, font=Theme.F_BTN,
+            command=self.dummy_register_action
+        ).pack(fill="x", side="bottom", pady=10)
+
+    # ================= LOGIC HELPER =================
+    def create_label(self, parent, text, pady=5):
+        # PERBAIKAN 1: Penambahan anchor="w" langsung di dalam CTkLabel
+        # Ini memastikan teks selalu rata kiri meskipun fill="x"
+        ctk.CTkLabel(parent, text=text, font=Theme.F_TITLE, text_color=Theme.MUTED, anchor="w").pack(fill="x", pady=(pady, 0))
+
+    def create_entry(self, parent, placeholder, show=""):
+        entry = ctk.CTkEntry(
+            parent, placeholder_text=placeholder,
+            font=Theme.F_BODY, text_color=Theme.TEXT,
+            fg_color=Theme.INPUT_BG, border_width=0, corner_radius=10,
+            height=45, show=show
+        )
+        entry.pack(fill="x", pady=(5, 0))
+        return entry
+
+    def dummy_login_action(self):
+        user = self.entry_user.get()
+        pwd = self.entry_pass.get()
+        if not user or not pwd:
+            msgbox.showwarning("Gagal Masuk", "Mohon isi ID dan Password!")
+        else:
+            msgbox.showinfo("Berhasil", f"Selamat datang kembali, {user}!")
+
+    def dummy_register_action(self):
+        if not self.reg_nama.get():
+            msgbox.showwarning("Data Kurang", "Nama lengkap wajib diisi!")
+            return
+        if self.check_var.get() == "off":
+            msgbox.showwarning("Persetujuan", "Anda harus menyetujui Syarat & Ketentuan.")
+            return
+        msgbox.showinfo("Sukses", "Akun berhasil dibuat! Silakan login.")
+        self.show_login_page()
+
+if __name__ == "__main__":
+    app = ESakuApp()
+    app.mainloop()
