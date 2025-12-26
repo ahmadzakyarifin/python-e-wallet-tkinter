@@ -134,8 +134,8 @@ class HomeView:
         y_bg = self.H - 90
         self.canvas.create_rectangle(0, y_bg, self.W, self.H, fill=Theme.WHITE, outline="#EEEEEE")
         
-        items = [("Home","home",None), ("Riwayat","history","history"), ("Setelan","settings","profile")]
-        cw = self.W / 3
+        items = [("Home","home",None), ("Riwayat","history","history")]
+        cw = self.W / 2
         y_icon = self.H - 55
         
         for i, (lbl, icon, target) in enumerate(items):

@@ -160,8 +160,8 @@ class HistoryView:
         y_bg = self.H - 90
         self.canvas.create_rectangle(0, y_bg, self.W, self.H, fill=Theme.WHITE, outline="#EEEEEE")
         
-        items = [("Home","home","home"), ("Riwayat","history",None), ("Setelan","settings","profile")]
-        cw = self.W / 3; y_icon = self.H - 55
+        items = [("Home","home","home"), ("Riwayat","history",None)]
+        cw = self.W / 2; y_icon = self.H - 55
         
         for i, (lbl, icon, target) in enumerate(items):
             x = (i * cw) + (cw / 2)

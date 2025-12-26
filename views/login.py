@@ -1,39 +1,19 @@
 import customtkinter as ctk
 import tkinter.messagebox as msgbox
-import platform
+import sys
+import os
+
+
+# Kode ini mendaftarkan folder luar (root) agar login.py bisa baca theme.py
+current_dir = os.path.dirname(os.path.abspath(__file__)) # Lokasi file ini (views)
+parent_dir = os.path.dirname(current_dir)                # Lokasi folder luar (root)
+sys.path.append(parent_dir)                              # Daftarkan ke sistem
+# ==========================================
+
+from theme import Theme
 
 # ==========================================
-# BAGIAN 1: KONFIGURASI TEMA & OS
-# ==========================================
-
-os_name = platform.system()
-if os_name == "Windows":
-    FONT_FAMILY = "Segoe UI"
-    try:
-        from ctypes import windll
-        windll.shcore.SetProcessDpiAwareness(1)
-    except:
-        pass
-else:
-    FONT_FAMILY = "DejaVu Sans"
-
-class Theme:
-    PRIMARY   = "#00C853"  # Hijau Utama
-    BG        = "#F0F2F5"  # Background Window
-    WHITE     = "#FFFFFF"
-    TEXT      = "#2D3436"  
-    MUTED     = "#636E72"  
-    INPUT_BG  = "#E8F5E9"  
-    HOVER_BTN = "#00E676"  
-    
-    F_HEAD    = (FONT_FAMILY, 30, "bold") 
-    F_SUB     = (FONT_FAMILY, 16)         
-    F_TITLE   = (FONT_FAMILY, 11, "bold") 
-    F_BODY    = (FONT_FAMILY, 12)         
-    F_BTN     = (FONT_FAMILY, 13, "bold")
-
-# ==========================================
-# BAGIAN 2: APLIKASI UTAMA
+# APLIKASI UTAMA
 # ==========================================
 
 ctk.set_appearance_mode("light")
@@ -42,6 +22,7 @@ ctk.set_default_color_theme("green")
 class ESakuApp(ctk.CTk):
     def __init__(self):
         super().__init__()
+
 
         self.W, self.H = 520, 930 
         self.geometry(f"{self.W}x{self.H}")
@@ -57,37 +38,36 @@ class ESakuApp(ctk.CTk):
         for widget in self.main_container.winfo_children():
             widget.destroy()
 
-    # --- HELPER UI ---
     def create_back_button(self, parent):
+        font_name = Theme.F_HEAD[0] 
         btn = ctk.CTkButton(
             parent, text="←", width=45, height=45, corner_radius=22.5,         
             fg_color=Theme.WHITE, text_color=Theme.PRIMARY, hover_color="#FAFAFA",
-            font=(FONT_FAMILY, 24, "bold"), command=self.show_welcome_page
+            font=(font_name, 24, "bold"), command=self.show_welcome_page
         )
         btn.place(x=25, y=25) 
 
     def create_header_bg(self, height):
         header = ctk.CTkFrame(self.main_container, fg_color=Theme.PRIMARY, height=height, corner_radius=0)
         header.pack(fill="x", side="top")
-        
-        # PERBAIKAN BUG HIASAN REGISTER
-        # Posisi digeser sedikit ke atas dan kanan (x=340, y=-100) agar tidak terpotong kartu putih
-        ctk.CTkLabel(header, text="", width=250, height=250, fg_color="#00E676", corner_radius=125).place(x=340, y=-100)
+
+        # Hiasan Lingkaran
+        ctk.CTkLabel(header, text="", width=250, height=250, fg_color=Theme.INCOME, corner_radius=125).place(x=340, y=-100)
         return header
 
-    # ================= PAGE 1: WELCOME SCREEN =================
+    # ================= WELCOME SCREEN =================
     def show_welcome_page(self):
         self.clear_frame()
         
         bg = ctk.CTkFrame(self.main_container, fg_color=Theme.PRIMARY, corner_radius=0)
         bg.pack(fill="both", expand=True)
 
-        ctk.CTkLabel(bg, text="", width=300, height=300, fg_color="#00E676", corner_radius=150).place(x=-100, y=-50)
+        ctk.CTkLabel(bg, text="", width=300, height=300, fg_color=Theme.INCOME, corner_radius=150).place(x=-100, y=-50)
 
         center_frame = ctk.CTkFrame(bg, fg_color="transparent")
         center_frame.place(relx=0.5, rely=0.4, anchor="center")
 
-        ctk.CTkLabel(center_frame, text="E-SAKU", font=(FONT_FAMILY, 48, "bold"), text_color="white").pack()
+        ctk.CTkLabel(center_frame, text="E-SAKU", font=Theme.F_HEAD_L, text_color="white").pack()
         ctk.CTkLabel(center_frame, text="Solusi Saku Digital", font=Theme.F_SUB, text_color="#E8F5E9").pack(pady=5)
 
         bottom_frame = ctk.CTkFrame(bg, fg_color="transparent")
@@ -108,16 +88,15 @@ class ESakuApp(ctk.CTk):
             font=Theme.F_BTN, command=self.show_register_page
         ).pack(pady=5, ipadx=10)
         
-        ctk.CTkLabel(bg, text="v1.4 (Final UI Fix)", font=(FONT_FAMILY, 10), text_color="#C8E6C9").place(relx=0.5, rely=0.97, anchor="center")
+        ctk.CTkLabel(bg, text="v1.0", font=(Theme.F_HEAD[0], 10), text_color="#C8E6C9").place(relx=0.5, rely=0.97, anchor="center")
 
-    # ================= PAGE 2: LOGIN (PERBAIKAN) =================
+    # ================= LOGIN  =================
     def show_login_page(self):
         self.clear_frame()
 
         header = self.create_header_bg(height=320)
         self.create_back_button(header)
-        
-        # PERBAIKAN 2: Teks Header Bahasa Indonesia
+
         ctk.CTkLabel(
             header, text="Selamat Datang di\nE-SAKU", 
             font=Theme.F_HEAD, text_color="white", justify="center"
@@ -129,8 +108,7 @@ class ESakuApp(ctk.CTk):
         content = ctk.CTkFrame(card, fg_color="transparent")
         content.pack(fill="both", expand=True, padx=30, pady=30)
 
-        # Input Form (Label otomatis rata kiri berkat update fungsi create_label di bawah)
-        self.create_label(content, "ID Pengguna (HP / Email)")
+        self.create_label(content, "(No Wa / Email)")
         self.entry_user = self.create_entry(content, "08xx / nama@email.com")
 
         self.create_label(content, "Password / PIN", pady=20) 
@@ -149,7 +127,7 @@ class ESakuApp(ctk.CTk):
         ctk.CTkLabel(footer, text="Belum punya akun?", font=Theme.F_BODY, text_color="gray").pack(side="left")
         ctk.CTkButton(footer, text="Daftar", fg_color="transparent", text_color=Theme.PRIMARY, font=Theme.F_TITLE, hover=False, width=30, command=self.show_register_page).pack(side="left", padx=5)
 
-    # ================= PAGE 3: REGISTER =================
+    # =================  REGISTER =================
     def show_register_page(self):
         self.clear_frame()
 
@@ -167,9 +145,7 @@ class ESakuApp(ctk.CTk):
         content = ctk.CTkFrame(card, fg_color="transparent")
         content.pack(fill="both", expand=True, padx=25, pady=25)
 
-        # Helper Input khusus Register (Agar label rata kiri)
         def add_input(label, placeholder, is_pass=False):
-            # Penambahan anchor="w" di sini agar rata kiri
             ctk.CTkLabel(content, text=label, font=Theme.F_TITLE, text_color=Theme.MUTED, anchor="w").pack(fill="x", pady=(8, 0))
             entry = ctk.CTkEntry(
                 content, placeholder_text=placeholder,
@@ -199,10 +175,9 @@ class ESakuApp(ctk.CTk):
             command=self.dummy_register_action
         ).pack(fill="x", side="bottom", pady=10)
 
+
     # ================= LOGIC HELPER =================
     def create_label(self, parent, text, pady=5):
-        # PERBAIKAN 1: Penambahan anchor="w" langsung di dalam CTkLabel
-        # Ini memastikan teks selalu rata kiri meskipun fill="x"
         ctk.CTkLabel(parent, text=text, font=Theme.F_TITLE, text_color=Theme.MUTED, anchor="w").pack(fill="x", pady=(pady, 0))
 
     def create_entry(self, parent, placeholder, show=""):
@@ -222,6 +197,7 @@ class ESakuApp(ctk.CTk):
             msgbox.showwarning("Gagal Masuk", "Mohon isi ID dan Password!")
         else:
             msgbox.showinfo("Berhasil", f"Selamat datang kembali, {user}!")
+            self.show_profile_page()
 
     def dummy_register_action(self):
         if not self.reg_nama.get():

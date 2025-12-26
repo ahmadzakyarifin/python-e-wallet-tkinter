@@ -1,7 +1,9 @@
 import tkinter as tk
 import platform
 
-# Konfigurasi OS
+# ==========================================
+# KONFIGURASI OS (WINDOWS High DPI Fix)
+# ==========================================
 os_name = platform.system()
 if os_name == "Windows":
     FONT_FAMILY = "Segoe UI"
@@ -14,15 +16,25 @@ else:
     FONT_FAMILY = "DejaVu Sans"
 
 class Theme:
+    # --- PALET WARNA UTAMA ---
     PRIMARY   = "#00C853"
-    BG        = "#F7F9FC"
+    BG        = "#F7F9FC"  
     WHITE     = "#FFFFFF"
-    TEXT      = "#2D3436"
-    MUTED     = "#636E72"
+    TEXT      = "#2D3436" 
+    MUTED     = "#636E72"  
     SHADOW    = "#D6D6D6"
-    INCOME    = "#00E676"
-    EXPENSE   = "#FF5252"
+    
+    # --- WARNA SEMANTIK ---
+    INCOME    = "#00E676" 
+    EXPENSE   = "#FF5252" 
+    DANGER    = "#FF3B30"  # Merah (Logout/Delete)
+    WARNING   = "#FF9800"
+    
+    # --- WARNA UI KOMPONEN ---
+    INPUT_BG  = "#E8F5E9" 
+    HOVER_BTN = "#00E676"  
 
+    # --- KATEGORI WARNA (Background & Icon) ---
     BTN_GREEN = "#E8F5E9"; IC_GREEN = "#00C853"
     BTN_BLUE  = "#E3F2FD"; IC_BLUE  = "#2979FF"
     BTN_ORANGE= "#FFF3E0"; IC_ORANGE= "#FF9800"
@@ -30,7 +42,10 @@ class Theme:
     BTN_RED   = "#FFEBEE"; IC_RED   = "#FF5252"
     BTN_YELLOW= "#FFF8E1"; IC_YELLOW= "#FFB300"
     
-    F_HEAD    = (FONT_FAMILY, 16, "bold")
+    # --- KONFIGURASI FONT ---
+    F_HEAD_L  = (FONT_FAMILY, 30, "bold")
+    F_HEAD    = (FONT_FAMILY, 16, "bold") 
+    F_SUB     = (FONT_FAMILY, 16)
     F_SALDO   = (FONT_FAMILY, 34, "bold")
     F_TITLE   = (FONT_FAMILY, 12, "bold")
     F_BODY    = (FONT_FAMILY, 11)
@@ -39,7 +54,7 @@ class Theme:
     F_JUMBO   = (FONT_FAMILY, 16, "bold")
 
 
-# --- PERBAIKAN DI SINI (Menambahkan tags=None) ---
+
 def draw_rounded_rect(canvas, x1, y1, x2, y2, r, color, tags=None):
     canvas.create_oval(x1, y1, x1+2*r, y1+2*r, fill=color, outline=color, tags=tags)
     canvas.create_oval(x2-2*r, y1, x2, y1+2*r, fill=color, outline=color, tags=tags)
