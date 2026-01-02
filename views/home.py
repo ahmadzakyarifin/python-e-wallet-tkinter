@@ -3,43 +3,53 @@ from tkinter import messagebox
 import sys
 import os
 
+# Setup import theme relative path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from theme import Theme, draw_rounded_rect, draw_icon, draw_nav_icon
 
 class HomeView:
-    def __init__(self, canvas, width, height, on_navigate):
+    def __init__(self, canvas, width, height, on_navigate, user_data):
         self.canvas = canvas
         self.W = width
         self.H = height
         self.navigate = on_navigate 
+        self.user_data = user_data # Menerima data dari main.py
 
     def draw(self):
         self.canvas.delete("all")
         
+        # Ambil data dari dictionary user_data
+        nama = self.user_data.get("nama", "User")
+        level = self.user_data.get("level", "Silver")
+        
         # --- HEADER ---
         self.canvas.create_rectangle(0, 0, self.W, 260, fill=Theme.PRIMARY, outline="")
         
-        self.draw_btn_avatar(50, 70, "A", cmd=lambda: self.navigate("profile"))
-        self.canvas.create_text(110, 70, text="Halo, Ahmad", anchor="w", font=Theme.F_HEAD, fill=Theme.WHITE)
-        self.canvas.create_text(110, 95, text="Gold Member", anchor="w", font=Theme.F_SMALL, fill="#E8F5E9")
+        # Avatar Initial
+        initial = nama[0].upper() if nama else "U"
+        self.draw_btn_avatar(50, 70, initial, cmd=lambda: self.navigate("profile"))
         
+        self.canvas.create_text(110, 70, text=f"Halo, {nama.split()[0]}", anchor="w", font=Theme.F_HEAD, fill=Theme.WHITE)
+        self.canvas.create_text(110, 95, text=f"{level} Member", anchor="w", font=Theme.F_SMALL, fill="#E8F5E9")
+        
+        # Icon Notifikasi
         self.canvas.create_oval(self.W-60, 70, self.W-50, 80, fill=Theme.IC_RED, outline=Theme.WHITE, width=2)
         self.canvas.create_text(self.W-70, 75, text="Notif", anchor="e", font=Theme.F_SMALL, fill=Theme.WHITE)
 
-        limit_max_dana = 40000000 
-        
-        pemasukan_real = 5000000  
-        saldo_saat_ini = 2500000  
-        
-        pengeluaran_real = pemasukan_real - saldo_saat_ini
+        # --- LOGIKA KEUANGAN ---
+        saldo_saat_ini = self.user_data.get("saldo", 0)
+        pemasukan = self.user_data.get("pemasukan", 0)
+        pengeluaran = self.user_data.get("pengeluaran", 0)
+        limit_trx = self.user_data.get("limit_trx", 10000000) # Default limit untuk visualisasi bar
 
+        # Format Rupiah
         str_saldo = f"Rp {saldo_saat_ini:,.0f}".replace(",", ".")
-        str_masuk = f"Rp {pemasukan_real:,.0f}".replace(",", ".")
-        str_keluar = f"Rp {pengeluaran_real:,.0f}".replace(",", ".")
-        persen_masuk = int((pemasukan_real / limit_max_dana) * 100)
+        str_masuk = f"Rp {pemasukan:,.0f}".replace(",", ".")
+        str_keluar = f"Rp {pengeluaran:,.0f}".replace(",", ".")
         
-        persen_keluar = int((pengeluaran_real / pemasukan_real) * 100)
-
+        # Hitung Persentase (dengan handling division by zero)
+        persen_masuk = int((pemasukan / limit_trx) * 100) if limit_trx > 0 else 0
+        persen_keluar = int((pengeluaran / pemasukan) * 100) if pemasukan > 0 else 0
 
         # --- KARTU SALDO ---
         draw_rounded_rect(self.canvas, 40, 145, self.W-40, 315, 25, Theme.SHADOW)
@@ -102,7 +112,7 @@ class HomeView:
         self.canvas.create_line(pts, fill=color, width=2)
 
         self.canvas.create_text(x+20, y+75, text=title, anchor="w", font=Theme.F_BODY, fill=Theme.MUTED)
-        self.canvas.create_text(x+20, y+100, text=amount, anchor="w", font=Theme.F_JUMBO, fill=Theme.TEXT)
+        self.canvas.create_text(x+20, y+100, text=amount, anchor="w", font=("Arial", 16, "bold"), fill=Theme.TEXT) # Font sedikit disesuaikan
         
         # Stik Bar
         bar_x1, bar_y1 = x + 20, y + 130
@@ -111,7 +121,9 @@ class HomeView:
         
         if percent > 0:
             fill_w = (bar_x2 - bar_x1) * (percent / 100)
-            if percent > 100: fill_w = bar_x2 - bar_x1
+            # Cap di 100% agar bar tidak keluar kotak
+            if percent > 100: 
+                fill_w = bar_x2 - bar_x1
             draw_rounded_rect(self.canvas, bar_x1, bar_y1, bar_x1 + fill_w, bar_y2, 2, color)
         
         self.canvas.create_text(bar_x2, bar_y1 - 10, text=f"{percent}%", anchor="e", font=("Arial", 9, "bold"), fill=color)

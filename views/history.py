@@ -7,20 +7,15 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from theme import Theme, draw_rounded_rect, draw_icon, draw_nav_icon
 
 class HistoryView:
-    def __init__(self, canvas, width, height, on_navigate):
-        self.canvas, self.W, self.H, self.navigate = canvas, width, height, on_navigate
-        self.widgets = [] 
+    def __init__(self, canvas, width, height, on_navigate, data_transaksi):
+        self.canvas = canvas
+        self.W = width
+        self.H = height
+        self.navigate = on_navigate
         
-        # --- DATA DUMMY (Hanya Ada IN dan OUT) ---
-        self.data_transaksi = [
-            {"title": "Gaji Bulanan", "date": "25 Des, 09:00", "amount": 5000000, "type": "in"},
-            {"title": "Starbucks Kopi", "date": "24 Des, 14:30", "amount": 55000,   "type": "out"},
-            {"title": "Token Listrik", "date": "23 Des, 19:15", "amount": 150000,  "type": "out"},
-            {"title": "Beli Pulsa",    "date": "22 Des, 10:00", "amount": 50000,   "type": "out"}, # Dulu Pinjaman -> Jadi Out
-            {"title": "Top Up GoPay",  "date": "20 Des, 08:45", "amount": 100000,  "type": "out"},
-            {"title": "Bonus Tahunan", "date": "19 Des, 16:20", "amount": 2000000, "type": "in"},
-            {"title": "Bayar Cicilan", "date": "18 Des, 20:00", "amount": 200000,  "type": "out"}, # Dulu Pinjaman -> Jadi Out
-        ]
+        # Data Diterima dari MainApp (Backend)
+        self.data_transaksi = data_transaksi 
+        self.widgets = [] 
         
         self.var_search = tk.StringVar()
         self.filter_selected = "Semua" # Default
@@ -117,11 +112,11 @@ class HistoryView:
         y_start = 210
         found_count = 0
         
+        # Loop data yang diterima dari backend (bukan dummy local lagi)
         for item in self.data_transaksi:
             # --- LOGIKA FILTER REVISI (Cuma In/Out) ---
             if kategori == "Pemasukan" and item['type'] != "in": continue
             if kategori == "Pengeluaran" and item['type'] != "out": continue
-            # Filter 'Pinjaman' dihapus
             
             # Cek Search Keyword
             if keyword not in item['title'].lower(): continue

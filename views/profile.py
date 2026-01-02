@@ -3,49 +3,65 @@ from tkinter import messagebox
 import os
 import sys
 
-
+# --- Setup Import Theme ---
 current_dir = os.path.dirname(os.path.abspath(__file__)) 
-parent_dir = os.path.dirname(current_dir)                
-sys.path.append(parent_dir)                              
+parent_dir = os.path.dirname(current_dir)
+if parent_dir not in sys.path:
+    sys.path.append(parent_dir)
 
 try:
     from theme import Theme
 except ImportError:
-
-    print("\nCRITICAL ERROR: File theme.py tidak ditemukan di folder root!")
-    print(f"Sistem mencari di: {parent_dir}")
-    sys.exit(1)
+    class Theme:
+        BG = "#F5F5F5"
+        WHITE = "#FFFFFF"
+        PRIMARY = "#118EEA"
+        TEXT = "#333333"
+        MUTED = "#888888"
+        DANGER = "#FF0000"
+        BTN_GREEN = "#00C853"
+        F_HEAD = ("Arial", 16, "bold")
+        F_HEAD_L = ("Arial", 24, "bold")
+        F_TITLE = ("Arial", 14, "bold")
+        F_BODY = ("Arial", 12)
+        F_SMALL = ("Arial", 10)
+        F_BTN = ("Arial", 12, "bold")
+        F_JUMBO = ("Arial", 20)
+        F_SUB = ("Arial", 14)
 
 
 class EditFrame(ctk.CTkFrame):
+    """
+    Frame untuk mengedit data.
+    """
     def __init__(self, master, field_key, field_title, current_value, save_callback, cancel_callback):
         super().__init__(master, fg_color=Theme.BG)
         self.save_callback = save_callback
         self.cancel_callback = cancel_callback
         self.field_key = field_key
         
-        # --- Header Simple ---
+        # --- Header ---
         header = ctk.CTkFrame(self, fg_color=Theme.WHITE, height=60, corner_radius=0)
-        header.pack(fill="x", pady=(0, 1))
+        header.pack(fill="x", pady=(0, 1), anchor="n") 
 
-        # Tombol Kembali
-        back_btn = ctk.CTkButton(header, text="❮", font=Theme.F_JUMBO, width=50, 
+        # Tombol Kembali (Batal Edit)
+        back_btn = ctk.CTkButton(header, text="❮", font=Theme.F_JUMBO, width=40, height=40,
                                fg_color="transparent", text_color=Theme.TEXT, 
                                hover_color=Theme.BTN_GREEN, command=self.cancel_callback)
-        back_btn.pack(side="left", pady=10)
+        back_btn.pack(side="left", padx=10)
         
-        title = ctk.CTkLabel(header, text=field_title, font=Theme.F_HEAD, text_color=Theme.TEXT)
+        title = ctk.CTkLabel(header, text=f"Ubah {field_title}", font=Theme.F_HEAD, text_color=Theme.TEXT)
         title.pack(side="left", padx=5)
 
         # Tombol Simpan
         save_header_btn = ctk.CTkButton(header, text="Simpan", font=Theme.F_BTN, width=80,
                                       fg_color="transparent", text_color=Theme.PRIMARY,
                                       hover_color=Theme.BTN_GREEN, command=self.save_action)
-        save_header_btn.pack(side="right", padx=10)
+        save_header_btn.pack(side="right", padx=15)
 
         # --- Form Input ---
         form_card = ctk.CTkFrame(self, fg_color=Theme.WHITE, corner_radius=0)
-        form_card.pack(fill="x", pady=(20, 0))
+        form_card.pack(fill="x", pady=(20, 0), anchor="n")
 
         lbl = ctk.CTkLabel(form_card, text=field_title, font=Theme.F_SMALL, text_color=Theme.MUTED)
         lbl.pack(anchor="w", padx=20, pady=(15, 0))
@@ -55,7 +71,7 @@ class EditFrame(ctk.CTkFrame):
         self.entry.pack(fill="x", padx=15, pady=(0, 15))
         
         if field_key != "pin":
-            self.entry.insert(0, current_value)
+            self.entry.insert(0, str(current_value))
         else:
             self.entry.configure(show="•") 
 
@@ -63,9 +79,9 @@ class EditFrame(ctk.CTkFrame):
         line.pack(fill="x", side="bottom")
 
         # --- Hint ---
-        hint_text = "Pastikan data yang Anda masukkan benar dan valid."
+        hint_text = "Pastikan data benar."
         if field_key == "pin":
-            hint_text = "Jangan berikan PIN Anda kepada siapapun."
+            hint_text = "Jangan sebarkan PIN Anda."
             
         hint_lbl = ctk.CTkLabel(self, text=hint_text, font=Theme.F_SMALL, text_color=Theme.MUTED)
         hint_lbl.pack(anchor="w", padx=20, pady=(10, 0))
@@ -80,39 +96,67 @@ class EditFrame(ctk.CTkFrame):
         self.save_callback(self.field_key, new_value)
 
 
-class ProfileFrame(ctk.CTkScrollableFrame):
-    def __init__(self, master, user_data, navigate_callback, logout_callback):
+class ProfileFrame(ctk.CTkFrame):
+    """
+    Container utama Profile.
+    """
+    def __init__(self, master, user_data, navigate_callback, logout_callback, back_to_home_callback):
         super().__init__(master, fg_color=Theme.BG)
         self.user_data = user_data
-        self.navigate = navigate_callback 
-        self.logout_callback = logout_callback
         
-        self.create_widgets()
+        self.navigate_callback = navigate_callback   
+        self.logout_callback = logout_callback       
+        self.back_to_home_callback = back_to_home_callback
+        
+        self.content_frame = None
+        self.show_main_profile_view()
 
-    def create_widgets(self):
-        # --- Header ---
-        header_container = ctk.CTkFrame(self, fg_color=Theme.PRIMARY, corner_radius=0)
-        header_container.pack(fill="x", pady=(0, 20))
+    def show_main_profile_view(self):
+        """Menampilkan UI List Menu Profil"""
+        if self.content_frame:
+            self.content_frame.destroy()
+
+        # --- 1. Top Bar (Header Android Style) ---
+        top_bar = ctk.CTkFrame(self, fg_color=Theme.PRIMARY, height=60, corner_radius=0)
+        top_bar.pack(fill="x", anchor="n")
+
+        # Tombol Back "Kecil & Cute"
+        btn_back = ctk.CTkButton(top_bar, text="←", font=("Arial", 20, "bold"), 
+                                 fg_color=Theme.WHITE, text_color=Theme.PRIMARY,
+                                 hover_color="#EEEEEE",
+                                 width=36, height=36, corner_radius=18, 
+                                 command=self.back_to_home_callback)
+        btn_back.pack(side="left", padx=20, pady=10)
+        
+        # --- 2. Area Scrollable ---
+        self.content_frame = ctk.CTkScrollableFrame(self, fg_color=Theme.BG)
+        self.content_frame.pack(fill="both", expand=True, pady=(0,0)) 
+
+        # --- Header Profil ---
+        header_container = ctk.CTkFrame(self.content_frame, fg_color=Theme.PRIMARY, corner_radius=0)
+        header_container.pack(fill="x", pady=(0, 20), anchor="n")
 
         profile_circle = ctk.CTkFrame(header_container, width=100, height=100, fg_color=Theme.WHITE, corner_radius=50)
-        profile_circle.pack(pady=(30, 10))
+        profile_circle.pack(pady=(5, 10)) 
         profile_circle.pack_propagate(False)
 
-        initials = "".join([n[0] for n in self.user_data['nama'].split()[:2]]).upper()
+        nama_user = self.user_data.get('nama', 'User')
+        initials = "".join([n[0] for n in nama_user.split()[:2]]).upper()
+        
         initial_label = ctk.CTkLabel(profile_circle, text=initials, font=Theme.F_HEAD_L, text_color=Theme.PRIMARY)
         initial_label.place(relx=0.5, rely=0.5, anchor="center")
 
-        name_label = ctk.CTkLabel(header_container, text=self.user_data["nama"], font=Theme.F_HEAD, text_color=Theme.WHITE)
+        name_label = ctk.CTkLabel(header_container, text=nama_user, font=Theme.F_HEAD, text_color=Theme.WHITE)
         name_label.pack(pady=(5, 5))
 
-        level_label = ctk.CTkLabel(header_container, text=f"⭐ {self.user_data['level']} Member", font=Theme.F_BODY, text_color=Theme.WHITE)
-        level_label.pack(pady=(0, 25))
+        level_label = ctk.CTkLabel(header_container, text=f"⭐ {self.user_data.get('level', 'Silver')} Member", font=Theme.F_BODY, text_color=Theme.WHITE)
+        level_label.pack(pady=(0, 30))
 
         # --- Menu Items ---
         self.add_section_label("Informasi Akun")
-        self.create_menu_item("👤", "Nama Pengguna", "nama", self.user_data["nama"])
-        self.create_menu_item("📱", "Nomor Telepon", "no_hp", self.user_data["no_hp"])
-        self.create_menu_item("📧", "Email", "email", self.user_data["email"])
+        self.create_menu_item("👤", "Nama Pengguna", "nama", self.user_data.get("nama"))
+        self.create_menu_item("📱", "Nomor Telepon", "no_hp", self.user_data.get("no_hp"))
+        self.create_menu_item("📧", "Email", "email", self.user_data.get("email"))
         self.create_menu_item("🆔", "E-Saku ID", None, "882910293") 
 
         self.add_section_label("Keamanan")
@@ -123,18 +167,48 @@ class ProfileFrame(ctk.CTkScrollableFrame):
         self.create_menu_item("🌐", "Bahasa", None, "Indonesia", is_setting=True)
         self.create_menu_item("❓", "Bantuan", None, None, is_setting=True)
 
-        logout_btn = ctk.CTkButton(self, text="Keluar dari Akun", font=Theme.F_BTN, 
-                                   fg_color=Theme.DANGER, hover_color="#FFEBEE", text_color=Theme.DANGER,
+        # --- FIX WARNA TOMBOL LOGOUT ---
+        # Sekarang text_color PUTIH (Theme.WHITE) agar terbaca di background merah
+        logout_btn = ctk.CTkButton(self.content_frame, text="Keluar dari Akun", font=Theme.F_BTN, 
+                                   fg_color=Theme.DANGER, 
+                                   text_color=Theme.WHITE, # <--- Perbaikan di sini (sebelumnya Theme.DANGER)
+                                   hover_color="#D32F2F",  # Merah sedikit lebih gelap saat hover
                                    height=50, corner_radius=10,
                                    command=self.logout_callback)
         logout_btn.pack(fill="x", padx=20, pady=(40, 50))
 
+    def show_edit_page(self, field_key, field_title, current_value, save_callback_from_main):
+        if self.content_frame:
+            self.content_frame.destroy()
+        
+        # Bersihkan widget top_bar saat masuk mode edit
+        for widget in self.winfo_children():
+            widget.destroy()
+
+        val_to_send = current_value if field_key != "pin" else ""
+        
+        self.content_frame = EditFrame(
+            master=self,
+            field_key=field_key,
+            field_title=field_title,
+            current_value=val_to_send,
+            save_callback=save_callback_from_main,
+            cancel_callback=self.refresh_ui 
+        )
+        self.content_frame.pack(fill="both", expand=True)
+
+    def refresh_ui(self):
+        """Merestart tampilan"""
+        for widget in self.winfo_children():
+            widget.destroy()
+        self.show_main_profile_view()
+
     def add_section_label(self, text):
-        lbl = ctk.CTkLabel(self, text=text, font=Theme.F_TITLE, text_color=Theme.TEXT)
+        lbl = ctk.CTkLabel(self.content_frame, text=text, font=Theme.F_TITLE, text_color=Theme.TEXT)
         lbl.pack(anchor="w", padx=20, pady=(15, 5))
 
     def create_menu_item(self, icon, title, key_data=None, value_text=None, is_setting=False):
-        item_frame = ctk.CTkFrame(self, fg_color=Theme.WHITE, corner_radius=12, border_width=1, border_color="#E0E0E0")
+        item_frame = ctk.CTkFrame(self.content_frame, fg_color=Theme.WHITE, corner_radius=12, border_width=1, border_color="#E0E0E0")
         item_frame.pack(fill="x", padx=20, pady=(0, 10))
 
         content = ctk.CTkFrame(item_frame, fg_color="transparent")
@@ -143,8 +217,13 @@ class ProfileFrame(ctk.CTkScrollableFrame):
         left_box = ctk.CTkFrame(content, fg_color="transparent")
         left_box.pack(side="left", fill="x", expand=True)
 
-        # Ikon
-        icon_lbl = ctk.CTkLabel(left_box, text=icon, font=("Segoe UI Emoji", 20), width=35) 
+        # Logika Font Aman
+        if os.name == "nt":
+            font_icon = ("Segoe UI Emoji", 20)
+        else:
+            font_icon = ("Arial", 24) 
+
+        icon_lbl = ctk.CTkLabel(left_box, text=icon, font=font_icon, width=35) 
         icon_lbl.pack(side="left", padx=(0, 10))
 
         text_box = ctk.CTkFrame(left_box, fg_color="transparent")
@@ -153,6 +232,7 @@ class ProfileFrame(ctk.CTkScrollableFrame):
         title_lbl = ctk.CTkLabel(text_box, text=title, font=Theme.F_BODY, text_color=Theme.TEXT)
         title_lbl.pack(anchor="w")
 
+        val_lbl = None
         if value_text:
             val_lbl = ctk.CTkLabel(text_box, text=value_text, font=Theme.F_SMALL, text_color=Theme.MUTED)
             val_lbl.pack(anchor="w")
@@ -163,61 +243,15 @@ class ProfileFrame(ctk.CTkScrollableFrame):
             arrow_lbl.pack(side="right")
             
             def on_tap(event):
-                if key_data: self.navigate(key_data, title, value_text)
-                elif is_setting: messagebox.showinfo("Info", f"Menu {title}")
+                if key_data: 
+                    self.navigate_callback(key_data, title, value_text)
+                elif is_setting: 
+                    messagebox.showinfo("Info", f"Menu {title}")
 
             widgets = [item_frame, content, left_box, icon_lbl, text_box, title_lbl, arrow_lbl]
-            if value_text: widgets.append(val_lbl if 'val_lbl' in locals() else None)
+            if val_lbl: widgets.append(val_lbl)
             
             for w in widgets:
                 if w:
                     w.configure(cursor="hand2")
                     w.bind("<Button-1>", on_tap)
-
-
-class MainApp(ctk.CTk):
-    def __init__(self):
-        super().__init__()
-        self.title("DANA Profile")
-        self.geometry("520x930") 
-        self.resizable(False, False)
-        
-        try:
-            self.configure(fg_color=Theme.BG) 
-        except:
-            pass
-
-        self.user_data = {
-            "nama": "Ahmad Rizki",
-            "no_hp": "+62 812-3456-7890",
-            "email": "ahmad.rizki@email.com",
-            "level": "Gold",
-            "pin": "123456" 
-        }
-
-        self.current_frame = None
-        self.show_profile_page()
-
-    def show_profile_page(self):
-        if self.current_frame: self.current_frame.pack_forget()
-        self.current_frame = ProfileFrame(self, self.user_data, self.show_edit_page, self.logout)
-        self.current_frame.pack(fill="both", expand=True)
-
-    def show_edit_page(self, field_key, field_title, current_value):
-        if self.current_frame: self.current_frame.pack_forget()
-        val_to_send = current_value if field_key != "pin" else ""
-        self.current_frame = EditFrame(self, field_key, field_title, val_to_send, self.save_data, self.show_profile_page)
-        self.current_frame.pack(fill="both", expand=True)
-
-    def save_data(self, key, new_value):
-        self.user_data[key] = new_value
-        messagebox.showinfo("Sukses", "Data berhasil diperbarui!")
-        self.show_profile_page()
-
-    def logout(self):
-        if messagebox.askyesno("Keluar", "Yakin ingin keluar?"):
-            self.quit()
-
-if __name__ == "__main__":
-    app = MainApp()
-    app.mainloop()
