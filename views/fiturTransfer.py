@@ -153,4 +153,4 @@ class TransferView(ctk.CTkFrame):
         nominal = int(nominal_str)
         
         # Panggil callback di MainApp untuk proses logic backend
-        self.transfer_callback(nomor, nominal, catatan)
+        self.transfer_callback(nomor, nominal, catatan)n 
