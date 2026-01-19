@@ -1,5 +1,5 @@
 import customtkinter as ctk
-import tkinter.messagebox as msgbox
+from tkinter import messagebox
 import sys
 import os
 
@@ -11,7 +11,7 @@ sys.path.append(parent_dir)
 try:
     from theme import Theme
 except ImportError:
-    # Fallback Theme jika dijalankan langsung tanpa folder structure
+    # Fallback jika dijalankan langsung
     class Theme:
         BG = "#F5F5F5"
         WHITE = "#FFFFFF"
@@ -28,22 +28,25 @@ except ImportError:
         F_BODY = ("Arial", 12)
         F_BTN = ("Arial", 14, "bold")
 
-# ==========================================
-# APLIKASI LOGIN
-# ==========================================
+# IMPORT BACKEND SERVICE
+from backend.services.auth_service import AuthService
 
-ctk.set_appearance_mode("light")
-ctk.set_default_color_theme("green") 
+class LoginApp:
+    def __init__(self, root, on_login_success):
+        self.root = root
+        self.on_login_success = on_login_success
+        
+        self.root.title("E-SAKU - Login")
+        
+        # Init Service
+        self.auth_service = AuthService()
 
-class ESakuApp(ctk.CTk):
-    def __init__(self):
-        super().__init__()
-        self.W, self.H = 520, 930 
-        self.geometry(f"{self.W}x{self.H}")
-        self.title("E-SAKU - Login") 
-        self.resizable(False, False)
+        # --- [PERBAIKAN] SET UKURAN WINDOW ---
+        self.root.geometry("520x930")
+        self.root.resizable(False, False) 
 
-        self.main_container = ctk.CTkFrame(self, fg_color=Theme.BG)
+        # Container Utama
+        self.main_container = ctk.CTkFrame(self.root, fg_color=Theme.BG)
         self.main_container.pack(fill="both", expand=True)
 
         self.show_welcome_page()
@@ -53,11 +56,10 @@ class ESakuApp(ctk.CTk):
             widget.destroy()
 
     def create_back_button(self, parent):
-        font_name = Theme.F_HEAD[0] 
         btn = ctk.CTkButton(
             parent, text="←", width=45, height=45, corner_radius=22.5,         
             fg_color=Theme.WHITE, text_color=Theme.PRIMARY, hover_color="#FAFAFA",
-            font=(font_name, 24, "bold"), command=self.show_welcome_page
+            font=("Arial", 24, "bold"), command=self.show_welcome_page
         )
         btn.place(x=25, y=25) 
 
@@ -84,7 +86,7 @@ class ESakuApp(ctk.CTk):
 
         ctk.CTkButton(bottom_frame, text="Masuk Akun", fg_color=Theme.WHITE, text_color=Theme.PRIMARY, hover_color="#F1F8E9", height=55, corner_radius=27, font=Theme.F_BTN, command=self.show_login_page).pack(pady=10, ipadx=30)
         ctk.CTkButton(bottom_frame, text="Buka Rekening Baru", fg_color="transparent", text_color=Theme.WHITE, border_width=2, border_color=Theme.WHITE, hover_color=Theme.HOVER_BTN, height=55, corner_radius=27, font=Theme.F_BTN, command=self.show_register_page).pack(pady=5, ipadx=10)
-        ctk.CTkLabel(bg, text="v1.0", font=(Theme.F_HEAD[0], 10), text_color="#C8E6C9").place(relx=0.5, rely=0.97, anchor="center")
+        ctk.CTkLabel(bg, text="v1.0", font=("Arial", 10), text_color="#C8E6C9").place(relx=0.5, rely=0.97, anchor="center")
 
     def show_login_page(self):
         self.clear_frame()
@@ -97,13 +99,12 @@ class ESakuApp(ctk.CTk):
         content = ctk.CTkFrame(card, fg_color="transparent")
         content.pack(fill="both", expand=True, padx=30, pady=30)
 
-        self.create_label(content, "(No Wa / Email)")
-        self.entry_user = self.create_entry(content, "08xx / nama@email.com")
-        self.create_label(content, "Password / PIN", pady=20) 
+        self.create_label(content, "Username")
+        self.entry_user = self.create_entry(content, "Masukkan Username")
+        self.create_label(content, "Password", pady=20) 
         self.entry_pass = self.create_entry(content, "********", show="*")
 
-        ctk.CTkButton(content, text="Lupa Password?", fg_color="transparent", text_color=Theme.PRIMARY, font=Theme.F_TITLE, hover=False, width=0, anchor="e").pack(fill="x", pady=(5, 20))
-        ctk.CTkButton(content, text="LOGIN SEKARANG", fg_color=Theme.PRIMARY, hover_color=Theme.HOVER_BTN, height=55, corner_radius=27, font=Theme.F_BTN, command=self.dummy_login_action).pack(fill="x")
+        ctk.CTkButton(content, text="LOGIN SEKARANG", fg_color=Theme.PRIMARY, hover_color=Theme.HOVER_BTN, height=55, corner_radius=27, font=Theme.F_BTN, command=self.action_login).pack(fill="x", pady=20)
 
         footer = ctk.CTkFrame(content, fg_color="transparent")
         footer.pack(side="bottom", pady=15)
@@ -121,16 +122,16 @@ class ESakuApp(ctk.CTk):
         content = ctk.CTkFrame(card, fg_color="transparent")
         content.pack(fill="both", expand=True, padx=25, pady=25)
 
-        self.reg_nama = self.add_input(content, "Nama Lengkap", "Sesuai KTP")
+        self.reg_nama = self.add_input(content, "Username", "Username unik")
         self.reg_hp = self.add_input(content, "No. WhatsApp", "08xxxxxxxxxx")
         self.reg_email = self.add_input(content, "Email", "email@domain.com")
         self.reg_pass1 = self.add_input(content, "Password", "Min. 8 karakter", True)
 
         self.check_var = ctk.StringVar(value="off")
         ctk.CTkCheckBox(content, text="Saya setuju dengan S&K E-SAKU", variable=self.check_var, onvalue="on", offvalue="off", font=Theme.F_TITLE, text_color="gray", fg_color=Theme.PRIMARY, border_width=2, checkbox_width=20, checkbox_height=20).pack(fill="x", pady=(20, 10))
-        ctk.CTkButton(content, text="BUAT AKUN", fg_color=Theme.PRIMARY, hover_color=Theme.HOVER_BTN, height=55, corner_radius=27, font=Theme.F_BTN, command=self.dummy_register_action).pack(fill="x", side="bottom", pady=10)
+        ctk.CTkButton(content, text="BUAT AKUN", fg_color=Theme.PRIMARY, hover_color=Theme.HOVER_BTN, height=55, corner_radius=27, font=Theme.F_BTN, command=self.action_register).pack(fill="x", side="bottom", pady=10)
 
-    # ================= HELPERS & LOGIC =================
+    # ================= HELPERS =================
     def create_label(self, parent, text, pady=5):
         ctk.CTkLabel(parent, text=text, font=Theme.F_TITLE, text_color=Theme.MUTED, anchor="w").pack(fill="x", pady=(pady, 0))
 
@@ -145,39 +146,39 @@ class ESakuApp(ctk.CTk):
         entry.pack(fill="x", pady=(2, 0))
         return entry
 
-    def dummy_login_action(self):
+    # ================= LOGIC =================
+    def action_login(self):
         user = self.entry_user.get()
         pwd = self.entry_pass.get()
         
         if not user or not pwd:
-            msgbox.showwarning("Gagal Masuk", "Mohon isi ID dan Password!")
+            messagebox.showwarning("Gagal Masuk", "Mohon isi Username dan Password!")
             return
 
-        # --- LOGIKA PINDAH KE MAIN APP ---
-        # Tutup jendela Login
-        self.destroy()
-        
-        # Buka Main App
-        # Kita import di dalam fungsi agar tidak error circular import
-        try:
-            from main import MainApp
-            app = ctk.CTk()
-            MainApp(app)
-            app.mainloop()
-        except ImportError as e:
-            print(f"Error membuka main.py: {e}")
-            msgbox.showerror("Critical Error", "File main.py tidak ditemukan!")
+        user_id = self.auth_service.login(user, pwd)
+        if user_id:
+            # Login Sukses -> panggil callback dengan user_id
+            self.main_container.destroy()
+            self.on_login_success(user_id)
+        else:
+            messagebox.showerror("Gagal", "Username atau Password salah!")
 
-    def dummy_register_action(self):
-        if not self.reg_nama.get():
-            msgbox.showwarning("Data Kurang", "Nama lengkap wajib diisi!")
+    def action_register(self):
+        nama = self.reg_nama.get()
+        hp = self.reg_hp.get()
+        email = self.reg_email.get()
+        pwd = self.reg_pass1.get()
+
+        if not nama or not hp or not email or not pwd:
+            messagebox.showwarning("Data Kurang", "Semua kolom wajib diisi!")
             return
         if self.check_var.get() == "off":
-            msgbox.showwarning("Persetujuan", "Anda harus menyetujui Syarat & Ketentuan.")
+            messagebox.showwarning("Persetujuan", "Anda harus menyetujui Syarat & Ketentuan.")
             return
-        msgbox.showinfo("Sukses", "Akun berhasil dibuat! Silakan login.")
-        self.show_login_page()
 
-if __name__ == "__main__":
-    app = ESakuApp()
-    app.mainloop()
+        success, msg = self.auth_service.register(nama, email, pwd, hp)
+        if success:
+            messagebox.showinfo("Sukses", msg)
+            self.show_login_page()
+        else:
+            messagebox.showerror("Gagal Register", msg)

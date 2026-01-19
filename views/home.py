@@ -1,4 +1,3 @@
-import tkinter as tk
 from tkinter import messagebox
 import sys
 import os
@@ -13,57 +12,69 @@ class HomeView:
         self.W = width
         self.H = height
         self.navigate = on_navigate 
-        self.user_data = user_data # Menerima data dari main.py
+        self.user_data = user_data
+        
+        # --- DEBUG REMOVED ---
+        # self.canvas.bind("<Button-1>", self.debug_klik_sembarang) # DELETED
 
     def draw(self):
         self.canvas.delete("all")
         
-        # Ambil data dari dictionary user_data
-        nama = self.user_data.get("nama", "User")
-        level = self.user_data.get("level", "Silver")
+        # Fokuskan canvas agar merespon
+        try:
+            self.canvas.focus_set()
+        except:
+            pass
+        
+        # --- DATA ---
+        nama = self.user_data.get("nama", "User") if self.user_data else "User"
+        level = self.user_data.get("level", "Silver") if self.user_data else "Silver"
+        saldo = self.user_data.get("saldo", 0) if self.user_data else 0
+        pemasukan = self.user_data.get("pemasukan", 0) if self.user_data else 0
+        pengeluaran = self.user_data.get("pengeluaran", 0) if self.user_data else 0
         
         # --- HEADER ---
         self.canvas.create_rectangle(0, 0, self.W, 260, fill=Theme.PRIMARY, outline="")
         
-        # Avatar Initial
+        # Avatar
         initial = nama[0].upper() if nama else "U"
         self.draw_btn_avatar(50, 70, initial, cmd=lambda: self.navigate("profile"))
         
         self.canvas.create_text(110, 70, text=f"Halo, {nama.split()[0]}", anchor="w", font=Theme.F_HEAD, fill=Theme.WHITE)
         self.canvas.create_text(110, 95, text=f"{level} Member", anchor="w", font=Theme.F_SMALL, fill="#E8F5E9")
         
-        # Icon Notifikasi
+        # Notif
         self.canvas.create_oval(self.W-60, 70, self.W-50, 80, fill=Theme.IC_RED, outline=Theme.WHITE, width=2)
         self.canvas.create_text(self.W-70, 75, text="Notif", anchor="e", font=Theme.F_SMALL, fill=Theme.WHITE)
 
-        # --- LOGIKA KEUANGAN ---
-        saldo_saat_ini = self.user_data.get("saldo", 0)
-        pemasukan = self.user_data.get("pemasukan", 0)
-        pengeluaran = self.user_data.get("pengeluaran", 0)
-        limit_trx = self.user_data.get("limit_trx", 10000000) # Default limit untuk visualisasi bar
-
-        # Format Rupiah
-        str_saldo = f"Rp {saldo_saat_ini:,.0f}".replace(",", ".")
+        # --- KARTU UTAMA ---
+        str_saldo = f"Rp {saldo:,.0f}".replace(",", ".")
         str_masuk = f"Rp {pemasukan:,.0f}".replace(",", ".")
         str_keluar = f"Rp {pengeluaran:,.0f}".replace(",", ".")
         
-        # Hitung Persentase (dengan handling division by zero)
-        persen_masuk = int((pemasukan / limit_trx) * 100) if limit_trx > 0 else 0
-        persen_keluar = int((pengeluaran / pemasukan) * 100) if pemasukan > 0 else 0
+        # --- LIMIT DARI USER DATA (REAL) ---
+        limit_income = self.user_data.get("target_pemasukan", 10_000_000)
+        limit_expense = self.user_data.get("limit_pengeluaran", 5_000_000)
 
-        # --- KARTU SALDO ---
+        # Hitung Persentase Real
+        raw_pct_masuk = int((pemasukan / limit_income) * 100) if limit_income > 0 else 0
+        raw_pct_keluar = int((pengeluaran / limit_expense) * 100) if limit_expense > 0 else 0
+        
+        # Persentase untuk Visual Bar (Mentok 100%)
+        persen_masuk = min(raw_pct_masuk, 100)
+        persen_keluar = min(raw_pct_keluar, 100)
+
         draw_rounded_rect(self.canvas, 40, 145, self.W-40, 315, 25, Theme.SHADOW)
         draw_rounded_rect(self.canvas, 40, 140, self.W-40, 310, 25, Theme.WHITE)
         
         self.canvas.create_text(70, 185, text="Total Saldo Aktif", anchor="w", font=Theme.F_BODY, fill=Theme.MUTED)
         self.canvas.create_text(70, 235, text=str_saldo, anchor="w", font=Theme.F_SALDO, fill=Theme.TEXT)
 
-        # --- KARTU STATISTIK ---
         y_stats = 340
         card_w = (self.W - 100) / 2
         
-        self.draw_card_stats(40, y_stats, card_w, "Pemasukan", str_masuk, Theme.INCOME, "up", persen_masuk)
-        self.draw_card_stats(40 + card_w + 20, y_stats, card_w, "Pengeluaran", str_keluar, Theme.EXPENSE, "down", persen_keluar)
+        self.draw_card_stats(40, y_stats, card_w, "Pemasukan", str_masuk, Theme.INCOME, "up", raw_pct_masuk, limit_income)
+        self.draw_card_stats(40 + card_w + 20, y_stats, card_w, "Pengeluaran", str_keluar, Theme.EXPENSE, "down", raw_pct_keluar, limit_expense)
 
         # --- MENU GRID ---
         self.canvas.create_text(40, 530, text="Layanan Keuangan", anchor="w", font=Theme.F_TITLE, fill=Theme.TEXT)
@@ -86,52 +97,63 @@ class HomeView:
             x = (col * col_w) + (col_w / 2)
             y = y_awal + (row * 110)
             
-            tag = f"btn_{label}"
+            # "Top Up" -> "btn_Top_Up"
+            safe_label = label.replace(" ", "_") 
+            tag = f"btn_{safe_label}"
+            
+            # Gambar
             self.draw_btn_menu(x, y, bg, ic_col, ic_type, label, tag)
             
+            # Binding
             if tujuan:
                 self.canvas.tag_bind(tag, "<Button-1>", lambda e, t=tujuan: self.navigate(t))
             else:
                 self.canvas.tag_bind(tag, "<Button-1>", lambda e: messagebox.showinfo("Info", "Maaf belum tersedia"))
 
-        # --- NAVIGASI BAWAH ---
+        # --- BOTTOM NAV ---
         self.draw_bottom_nav()
 
     # --- HELPERS ---
 
-    def draw_card_stats(self, x, y, w, title, amount, color, arrow, percent):
-        h = 150
+    def draw_card_stats(self, x, y, w, title, amount, color, arrow, percent, limit_val):
+        h = 160 
         draw_rounded_rect(self.canvas, x, y, x+w, y+h, 20, Theme.WHITE)
         
         self.canvas.create_oval(x+20, y+20, x+50, y+50, fill=Theme.BG, outline="")
         cx, cy = x+35, y+35
-        if arrow == "up":
-            pts = [cx, cy+6, cx, cy-6, cx-4, cy-2, cx, cy-6, cx+4, cy-2, cx, cy-6]
-        else:
-            pts = [cx, cy-6, cx, cy+6, cx-4, cy+2, cx, cy+6, cx+4, cy+2, cx, cy+6]
+        pts = [cx, cy+6, cx, cy-6, cx-4, cy-2, cx, cy-6, cx+4, cy-2, cx, cy-6] if arrow == "up" else \
+              [cx, cy-6, cx, cy+6, cx-4, cy+2, cx, cy+6, cx+4, cy+2, cx, cy+6]
         self.canvas.create_line(pts, fill=color, width=2)
 
         self.canvas.create_text(x+20, y+75, text=title, anchor="w", font=Theme.F_BODY, fill=Theme.MUTED)
-        self.canvas.create_text(x+20, y+100, text=amount, anchor="w", font=("Arial", 16, "bold"), fill=Theme.TEXT) # Font sedikit disesuaikan
+        self.canvas.create_text(x+20, y+100, text=amount, anchor="w", font=("Arial", 16, "bold"), fill=Theme.TEXT)
         
-        # Stik Bar
         bar_x1, bar_y1 = x + 20, y + 130
         bar_x2, bar_y2 = x + w - 20, y + 135
         draw_rounded_rect(self.canvas, bar_x1, bar_y1, bar_x2, bar_y2, 2, "#E0E0E0") 
         
         if percent > 0:
-            fill_w = (bar_x2 - bar_x1) * (percent / 100)
-            # Cap di 100% agar bar tidak keluar kotak
-            if percent > 100: 
-                fill_w = bar_x2 - bar_x1
+            fill_w = (bar_x2 - bar_x1) * (min(percent, 100) / 100)
             draw_rounded_rect(self.canvas, bar_x1, bar_y1, bar_x1 + fill_w, bar_y2, 2, color)
         
+        # Teks Persentase & Limit
+        if arrow == "up":
+            limit_str = f"Target: {limit_val/1000000:.1f}jt"
+        else:
+            limit_str = f"Budget: {limit_val/1000000:.1f}jt"
+            
         self.canvas.create_text(bar_x2, bar_y1 - 10, text=f"{percent}%", anchor="e", font=("Arial", 9, "bold"), fill=color)
+        self.canvas.create_text(bar_x1, bar_y1 + 15, text=limit_str, anchor="w", font=("Arial", 8), fill="#999")
 
     def draw_btn_menu(self, x, y, bg, ic_col, ic_type, label, tag):
         r = 35
         self.canvas.create_oval(x-r, y-r, x+r, y+r, fill=bg, outline="", tags=tag)
-        draw_icon(self.canvas, x, y, ic_type, ic_col)
+        
+        try:
+            draw_icon(self.canvas, x, y, ic_type, ic_col, tags=tag) 
+        except TypeError:
+            draw_icon(self.canvas, x, y, ic_type, ic_col)
+        
         self.canvas.create_text(x, y+50, text=label, font=Theme.F_BTN, fill=Theme.TEXT, tags=tag)
         self.efek_hover(tag)
 
