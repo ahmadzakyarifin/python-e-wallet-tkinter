@@ -2,7 +2,7 @@ from tkinter import messagebox
 import sys
 import os
 
-# Setup import theme relative path
+# Pengaturan jalur relatif impor tema
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from theme import Theme, draw_rounded_rect, draw_icon, draw_nav_icon
 
@@ -14,7 +14,7 @@ class HomeView:
         self.navigate = on_navigate 
         self.user_data = user_data
         
-        # --- DEBUG REMOVED ---
+        # --- DEBUG DIHAPUS ---
         # self.canvas.bind("<Button-1>", self.debug_klik_sembarang) # DELETED
 
     def draw(self):
@@ -52,7 +52,7 @@ class HomeView:
         str_masuk = f"Rp {pemasukan:,.0f}".replace(",", ".")
         str_keluar = f"Rp {pengeluaran:,.0f}".replace(",", ".")
         
-        # --- LIMIT DARI USER DATA (REAL) ---
+        # --- BATAS DARI DATA PENGGUNA (NYATA) ---
         limit_income = self.user_data.get("target_pemasukan", 10_000_000)
         limit_expense = self.user_data.get("limit_pengeluaran", 5_000_000)
 
@@ -60,7 +60,7 @@ class HomeView:
         raw_pct_masuk = int((pemasukan / limit_income) * 100) if limit_income > 0 else 0
         raw_pct_keluar = int((pengeluaran / limit_expense) * 100) if limit_expense > 0 else 0
         
-        # Persentase untuk Visual Bar (Mentok 100%)
+        # Persentase untuk Bar Visual (Mentok 100%)
         persen_masuk = min(raw_pct_masuk, 100)
         persen_keluar = min(raw_pct_keluar, 100)
 
@@ -76,7 +76,7 @@ class HomeView:
         self.draw_card_stats(40, y_stats, card_w, "Pemasukan", str_masuk, Theme.INCOME, "up", raw_pct_masuk, limit_income)
         self.draw_card_stats(40 + card_w + 20, y_stats, card_w, "Pengeluaran", str_keluar, Theme.EXPENSE, "down", raw_pct_keluar, limit_expense)
 
-        # --- MENU GRID ---
+        # --- GRID MENU ---
         self.canvas.create_text(40, 530, text="Layanan Keuangan", anchor="w", font=Theme.F_TITLE, fill=Theme.TEXT)
         
         daftar_menu = [
@@ -110,10 +110,10 @@ class HomeView:
             else:
                 self.canvas.tag_bind(tag, "<Button-1>", lambda e: messagebox.showinfo("Info", "Maaf belum tersedia"))
 
-        # --- BOTTOM NAV ---
+        # --- NAVIGASI BAWAH ---
         self.draw_bottom_nav()
 
-    # --- HELPERS ---
+    # --- PEMBANTU (HELPERS) ---
 
     def draw_card_stats(self, x, y, w, title, amount, color, arrow, percent, limit_val):
         h = 160 

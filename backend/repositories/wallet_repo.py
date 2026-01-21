@@ -8,7 +8,7 @@ class WalletRepository:
         conn = get_db_connection()
         cur = conn.cursor(dictionary=True)
 
-        # USER
+        # PENGGUNA
         cur.execute("SELECT * FROM akun WHERE id=%s", (user_id,))
         u = cur.fetchone()
         if not u:
@@ -17,8 +17,7 @@ class WalletRepository:
 
         # TRANSAKSI
         cur.execute("""
-            SELECT id, jumlah, tipe, sumber, deskripsi,
-            DATE_FORMAT(created_at,'%%d %%b, %%H:%%i') AS tanggal
+            SELECT id, jumlah, tipe, sumber, deskripsi, created_at
             FROM transaksi
             WHERE akun_id=%s
             ORDER BY created_at DESC
@@ -33,7 +32,7 @@ class WalletRepository:
                 type=r["tipe"],
                 source=r["sumber"],
                 description=r["deskripsi"],
-                date=r["tanggal"]
+                date=r["created_at"].strftime("%d %b %Y, %H:%M") if r["created_at"] else ""
             ) for r in rows
         ]
 
@@ -66,8 +65,6 @@ class WalletRepository:
 
     # ================= TRANSAKSI =================
 
-    # ================= TRANSAKSI =================
-
     def transfer_balance(self, sender_id, dest_phone, amount, desc_sender, desc_receiver):
         conn = get_db_connection()
         cur = conn.cursor()
@@ -78,26 +75,26 @@ class WalletRepository:
             receiver = cur.fetchone()
             if not receiver:
                 print("Receiver not found")
-                return False
+                return False, "Nomor tujuan tidak ditemukan"
 
             receiver_id = receiver[0]
             if receiver_id == sender_id:
                 print("Cannot transfer to self")
-                return False
+                return False, "Tidak bisa transfer ke diri sendiri"
 
-            # 2. Lock & Cek Saldo Pengirim
+            # 2. Key & Cek Saldo Pengirim
             cur.execute("SELECT saldo FROM akun WHERE id=%s FOR UPDATE", (sender_id,))
-            sender_saldo = cur.fetchone()[0]
+            sender_saldo = float(cur.fetchone()[0])
 
             if sender_saldo < amount:
                 conn.rollback()
-                return False
+                return False, "Saldo tidak mencukupi"
 
             # 3. Eksekusi Transfer
             # A. Kurangi Pengirim
-            # Modifikasi Deskripsi Pengirim: Tambahkan Nama Penerima agar muncul di History
+            # Modifikasi Deskripsi Pengirim: Tambahkan Nama Penerima agar muncul di Histori
             # Format: "Transfer ke 08xx (Nama) (Catatan...)"
-            final_desc_sender = desc_sender.replace(f"Transfer ke {dest_phone}", f"Transfer ke {dest_phone} ({receiver['username']})")
+            final_desc_sender = desc_sender.replace(f"Transfer ke {dest_phone}", f"Transfer ke {dest_phone} ({receiver[1]})")
 
             cur.execute("UPDATE akun SET saldo=saldo-%s WHERE id=%s", (amount, sender_id))
             cur.execute("""
@@ -113,12 +110,12 @@ class WalletRepository:
             """, (receiver_id, amount, desc_receiver))
 
             conn.commit()
-            return True
+            return True, "Transfer Berhasil"
 
         except Exception as e:
             conn.rollback()
             print("DB ERROR (Transfer):", e)
-            return False
+            return False, "Terjadi kesalahan sistem"
         finally:
             conn.close()
 
@@ -127,7 +124,7 @@ class WalletRepository:
         cur = conn.cursor()
 
         try:
-            # lock saldo
+            # kunci saldo (lock)
             cur.execute("SELECT saldo FROM akun WHERE id=%s FOR UPDATE", (user_id,))
             res = cur.fetchone()
             if not res:
@@ -138,13 +135,13 @@ class WalletRepository:
                 conn.rollback()
                 return False
 
-            # insert transaksi
+            # masukkan transaksi
             cur.execute("""
                 INSERT INTO transaksi (akun_id,jumlah,tipe,sumber,deskripsi)
                 VALUES (%s,%s,%s,%s,%s)
             """, (user_id, amount, tipe, sumber, desc))
 
-            # update saldo
+            # perbarui saldo
             op = "+" if tipe == "MASUK" else "-"
             cur.execute(f"""
                 UPDATE akun SET saldo = saldo {op} %s WHERE id=%s

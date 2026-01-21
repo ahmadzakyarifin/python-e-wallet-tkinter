@@ -3,7 +3,7 @@ from tkinter import messagebox
 import os
 import sys
 
-# --- Setup Import Theme ---
+# --- Pengaturan Impor Tema ---
 current_dir = os.path.dirname(os.path.abspath(__file__)) 
 parent_dir = os.path.dirname(current_dir)
 if parent_dir not in sys.path:
@@ -98,7 +98,7 @@ class EditFrame(ctk.CTkFrame):
 
 class ProfileFrame(ctk.CTkFrame):
     """
-    Container utama Profile.
+    Kontainer utama Profil.
     """
     def __init__(self, master, user_data, navigate_callback, logout_callback, back_to_home_callback):
         super().__init__(master, fg_color=Theme.BG)

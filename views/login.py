@@ -3,7 +3,7 @@ from tkinter import messagebox
 import sys
 import os
 
-# --- Setup Path Theme ---
+# --- Pengaturan Jalur Tema ---
 current_dir = os.path.dirname(os.path.abspath(__file__)) 
 parent_dir = os.path.dirname(current_dir)                
 sys.path.append(parent_dir)                              
@@ -11,7 +11,7 @@ sys.path.append(parent_dir)
 try:
     from theme import Theme
 except ImportError:
-    # Fallback jika dijalankan langsung
+    # Opsi cadangan jika dijalankan langsung
     class Theme:
         BG = "#F5F5F5"
         WHITE = "#FFFFFF"
@@ -28,7 +28,7 @@ except ImportError:
         F_BODY = ("Arial", 12)
         F_BTN = ("Arial", 14, "bold")
 
-# IMPORT BACKEND SERVICE
+# IMPOR LAYANAN BACKEND
 from backend.services.auth_service import AuthService
 
 class LoginApp:
@@ -38,14 +38,14 @@ class LoginApp:
         
         self.root.title("E-SAKU - Login")
         
-        # Init Service
+        # Inisialisasi Layanan
         self.auth_service = AuthService()
 
-        # --- [PERBAIKAN] SET UKURAN WINDOW ---
+        # --- [PERBAIKAN] ATUR UKURAN JENDELA ---
         self.root.geometry("520x930")
         self.root.resizable(False, False) 
 
-        # Container Utama
+        # Kontainer Utama
         self.main_container = ctk.CTkFrame(self.root, fg_color=Theme.BG)
         self.main_container.pack(fill="both", expand=True)
 
@@ -69,7 +69,7 @@ class LoginApp:
         ctk.CTkLabel(header, text="", width=250, height=250, fg_color=Theme.INCOME, corner_radius=125).place(x=340, y=-100)
         return header
 
-    # ================= PAGES =================
+    # ================= HALAMAN =================
     def show_welcome_page(self):
         self.clear_frame()
         bg = ctk.CTkFrame(self.main_container, fg_color=Theme.PRIMARY, corner_radius=0)
@@ -131,7 +131,7 @@ class LoginApp:
         ctk.CTkCheckBox(content, text="Saya setuju dengan S&K E-SAKU", variable=self.check_var, onvalue="on", offvalue="off", font=Theme.F_TITLE, text_color="gray", fg_color=Theme.PRIMARY, border_width=2, checkbox_width=20, checkbox_height=20).pack(fill="x", pady=(20, 10))
         ctk.CTkButton(content, text="BUAT AKUN", fg_color=Theme.PRIMARY, hover_color=Theme.HOVER_BTN, height=55, corner_radius=27, font=Theme.F_BTN, command=self.action_register).pack(fill="x", side="bottom", pady=10)
 
-    # ================= HELPERS =================
+    # ================= PEMBANTU =================
     def create_label(self, parent, text, pady=5):
         ctk.CTkLabel(parent, text=text, font=Theme.F_TITLE, text_color=Theme.MUTED, anchor="w").pack(fill="x", pady=(pady, 0))
 
@@ -146,7 +146,7 @@ class LoginApp:
         entry.pack(fill="x", pady=(2, 0))
         return entry
 
-    # ================= LOGIC =================
+    # ================= LOGIKA =================
     def action_login(self):
         user = self.entry_user.get()
         pwd = self.entry_pass.get()

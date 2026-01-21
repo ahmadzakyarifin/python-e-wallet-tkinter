@@ -3,7 +3,7 @@ from tkinter import messagebox
 import os
 import sys
 
-# --- Setup Import Theme ---
+# --- Pengaturan Impor Tema ---
 current_dir = os.path.dirname(os.path.abspath(__file__)) 
 parent_dir = os.path.dirname(current_dir)
 if parent_dir not in sys.path:
@@ -36,7 +36,7 @@ class PulsaView(ctk.CTkFrame):
         self.create_widgets()
 
     def create_widgets(self):
-        # 1. HEADER STANDARD
+        # 1. HEADER STANDAR
         header = ctk.CTkFrame(self, fg_color=Theme.PRIMARY, height=80, corner_radius=0)
         header.pack(fill="x", anchor="n")
         
@@ -49,11 +49,11 @@ class PulsaView(ctk.CTkFrame):
         saldo = f"Rp {self.user_data.get('saldo', 0):,}".replace(",", ".")
         ctk.CTkLabel(header, text=f"Saldo: {saldo}", font=("Arial", 12), text_color="#E8F5E9").pack(side="right", padx=20)
 
-        # 2. SCROLL CONTENT
+        # 2. KONTEN SCROLL
         self.scroll = ctk.CTkScrollableFrame(self, fg_color=Theme.BG)
         self.scroll.pack(fill="both", expand=True)
 
-        # 3. CARD INPUT
+        # 3. KARTU INPUT
         card = ctk.CTkFrame(self.scroll, fg_color=Theme.WHITE, corner_radius=15)
         card.pack(fill="x", padx=20, pady=20)
 
@@ -90,7 +90,7 @@ class PulsaView(ctk.CTkFrame):
         for pkg in packages:
             self.create_pkg_item(card, pkg)
 
-        # 4. BUTTON ACTION
+        # 4. AKSI TOMBOL
         ctk.CTkButton(self.scroll, text="BELI PULSA", font=Theme.F_BTN,
                       fg_color=Theme.PRIMARY, height=50, corner_radius=10, 
                       cursor="hand2", hover_color=Theme.BTN_HOVER_DARK,
@@ -141,12 +141,20 @@ class PulsaView(ctk.CTkFrame):
         self.pkg_buttons.append(frame)
 
     def on_submit(self):
-        if not self.entry_nomor.get() or not self.selected_operator or not self.selected_package:
+        nomor_hp = self.entry_nomor.get().strip()
+        
+        if not nomor_hp or not self.selected_operator or not self.selected_package:
             messagebox.showwarning("Error", "Lengkapi Data")
+            return
+            
+        # Validasi Telepon
+        import backend.utils.validator as validator
+        if not validator.is_valid_phone(nomor_hp):
+            messagebox.showwarning("Error", "Nomor HP Salah!\nHarus diawali 08 dan 10-13 digit.")
             return
         
         self.transaction_callback("pulsa", {
-            "nomor": self.entry_nomor.get(),
+            "nomor": nomor_hp,
             "operator": self.selected_operator,
             "nominal": self.selected_package['nominal'],
             "harga": self.selected_package['harga']

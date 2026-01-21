@@ -19,7 +19,7 @@ class WalletService:
         if catatan:
             desc_receiver += f" ({catatan})"
 
-        # Gunakan method transfer_balance yang baru
+        # Gunakan metode transfer_balance yang baru
         return self.repo.transfer_balance(
             self.user_id, nomor, nominal, desc_sender, desc_receiver
         )
@@ -48,4 +48,20 @@ class WalletService:
         )
 
     def update_info(self, key, value):
-        return self.repo.update_profile(self.user_id, key, value)
+        import backend.utils.validator as validator
+        
+        # Logika Validasi
+        if key == "email":
+            if not validator.is_valid_email(value):
+                return False, "Format email tidak valid"
+        elif key == "no_hp":
+            if not validator.is_valid_phone(value):
+                return False, "Nomor HP tidak valid (08...)"
+        elif key == "pin": # PIN acts as Password
+            if not validator.is_valid_password(value):
+                return False, "Password lemah (min 8 char, huruf+angka)"
+        
+        # Eksekusi Pembaruan
+        if self.repo.update_profile(self.user_id, key, value):
+            return True, "Update berhasil"
+        return False, "Gagal update database"

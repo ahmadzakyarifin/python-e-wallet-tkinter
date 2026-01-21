@@ -3,7 +3,7 @@ from tkinter import messagebox
 import os
 import sys
 
-# --- Setup Import Theme ---
+# --- Pengaturan Impor Tema ---
 current_dir = os.path.dirname(os.path.abspath(__file__)) 
 parent_dir = os.path.dirname(current_dir)
 if parent_dir not in sys.path:
@@ -34,7 +34,7 @@ class WithdrawView(ctk.CTkFrame):
         self.create_widgets()
 
     def create_widgets(self):
-        # 1. HEADER STANDARD
+        # 1. HEADER STANDAR
         header = ctk.CTkFrame(self, fg_color=Theme.PRIMARY, height=80, corner_radius=0)
         header.pack(fill="x", anchor="n")
         
@@ -47,7 +47,7 @@ class WithdrawView(ctk.CTkFrame):
         saldo = f"Rp {self.user_data.get('saldo', 0):,}".replace(",", ".")
         ctk.CTkLabel(header, text=f"Saldo: {saldo}", font=("Arial", 12), text_color="#E8F5E9").pack(side="right", padx=20)
 
-        # 2. SCROLL CONTENT
+        # 2. KONTEN SCROLL
         self.scroll = ctk.CTkScrollableFrame(self, fg_color=Theme.BG)
         self.scroll.pack(fill="both", expand=True)
 
@@ -57,7 +57,7 @@ class WithdrawView(ctk.CTkFrame):
         ctk.CTkLabel(info, text="ℹ️ Tarik tunai tanpa kartu di ATM BCA, BNI, BRI & Indomaret", 
                      text_color=Theme.PRIMARY, font=("Arial", 11)).pack(padx=15, pady=15, anchor="w")
 
-        # 4. CARD INPUT
+        # 4. KARTU INPUT
         card = ctk.CTkFrame(self.scroll, fg_color=Theme.WHITE, corner_radius=15)
         card.pack(fill="x", padx=20, pady=10)
 
@@ -68,7 +68,7 @@ class WithdrawView(ctk.CTkFrame):
         self.entry_nominal.pack(fill="x", padx=20, pady=(0, 15))
         self.entry_nominal.bind("<KeyRelease>", self.format_rupiah)
 
-        # Quick Actions
+        # Aksi Cepat
         q_frame = ctk.CTkFrame(card, fg_color="transparent")
         q_frame.pack(fill="x", padx=20, pady=(0, 20))
         for amt in [100000, 200000, 500000, 1000000]:
@@ -78,7 +78,7 @@ class WithdrawView(ctk.CTkFrame):
                           border_width=0, cursor="hand2", hover_color=Theme.BTN_HOVER_LIGHT,
                           command=lambda x=amt: self.set_nominal(x)).pack(side="left", padx=(0,10), expand=True, fill="x")
 
-        # PILIH LOKASI (Card Style, not Dropdown)
+        # PILIH LOKASI (Gaya Kartu, bukan Dropdown)
         ctk.CTkLabel(card, text="Pilih Lokasi Penarikan", font=("Arial", 12, "bold"), text_color=Theme.TEXT).pack(anchor="w", padx=20, pady=(0, 5))
         
         self.loc_buttons = []
@@ -97,11 +97,11 @@ class WithdrawView(ctk.CTkFrame):
         for i, l in enumerate(locs):
             self.create_loc_btn(grid, l, i)
 
-        # Admin Fee Info
+        # Info Biaya Admin
         self.lbl_fee = ctk.CTkLabel(card, text="Biaya Admin: Rp -", text_color="#F57C00", font=("Arial", 12, "bold"))
         self.lbl_fee.pack(padx=20, pady=(0, 20), anchor="w")
 
-        # 5. BUTTON ACTION
+        # 5. AKSI TOMBOL
         ctk.CTkButton(self.scroll, text="BUAT KODE PENARIKAN", font=Theme.F_BTN,
                       fg_color=Theme.PRIMARY, height=50, corner_radius=10, 
                       cursor="hand2", hover_color=Theme.BTN_HOVER_DARK,

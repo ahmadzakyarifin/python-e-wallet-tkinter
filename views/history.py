@@ -1,8 +1,9 @@
 import tkinter as tk
 from tkinter import messagebox
 import sys, os
+import customtkinter as ctk
 
-# Setup Path Theme
+# Pengaturan Jalur Tema
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from theme import Theme, draw_rounded_rect, draw_icon, draw_nav_icon
 
@@ -30,7 +31,7 @@ class HistoryView:
         # Background Abu-abu
         self.canvas.create_rectangle(0, 120, self.W, self.H, fill="#FAFAFA", outline="")
 
-        # --- B. SEARCH & FILTER UI ---
+        # --- B. UI PENCARIAN & FILTER ---
         self.draw_search_filter_ui(y_pos=140)
 
         # --- C. RENDER LIST ---
@@ -64,7 +65,7 @@ class HistoryView:
         self.canvas.tag_bind("btn_reset", "<Button-1>", lambda e: self.reset_search())
         self.efek_hover("btn_reset")
 
-        # 2. TOMBOL FILTER (Manual Drawing)
+        # 2. TOMBOL FILTER (Menggambar Manual)
         filter_x = self.W - 50
         
         # Gambar Tombol
@@ -141,16 +142,119 @@ class HistoryView:
         draw_rounded_rect(self.canvas, 22, y+3, self.W-18, y+78, 18, "#E0E0E0", tags=tag)
         draw_rounded_rect(self.canvas, 20, y, self.W-20, y+75, 18, Theme.WHITE, tags=tag)
         
-        # Icon & Teks
+        # Ikon & Teks
         self.canvas.create_oval(35, y+15, 80, y+60, fill=bg_icon, outline="", tags=tag)
         self.canvas.create_text(57, y+37, text=item['title'][0], font=("Arial", 15, "bold"), fill=color, tags=tag)
 
-        self.canvas.create_text(95, y+25, text=item['title'], anchor="w", font=Theme.F_BODY, fill=Theme.TEXT, tags=tag)
+        # Sederhanakan Judul untuk Daftar
+        display_title = item['title']
+        if "Transfer ke" in display_title and "(" in display_title:
+            # Extract name inside (...)
+            import re
+            match = re.search(r"\((.*?)\)", display_title)
+            if match:
+                display_title = f"Transfer ke {match.group(1)}"
+        
+        # Batasi Panjang
+        if len(display_title) > 25:
+            display_title = display_title[:22] + "..."
+
+        self.canvas.create_text(95, y+25, text=display_title, anchor="w", font=Theme.F_BODY, fill=Theme.TEXT, tags=tag)
         self.canvas.create_text(95, y+50, text=item['date'], anchor="w", font=Theme.F_SMALL, fill="#9E9E9E", tags=tag)
         
+        # Nominal (Kanan Atas)
         str_duit = f"{sign} Rp {item['amount']:,}".replace(",", ".")
-        self.canvas.create_text(self.W-35, y+37, text=str_duit, anchor="e", font=Theme.F_BTN, fill=color, tags=tag)
+        self.canvas.create_text(self.W-35, y+25, text=str_duit, anchor="e", font=("Arial", 12, "bold"), fill=color, tags=tag)
 
+        # Tombol Detail (Kanan Bawah)
+        btn_w = 60
+        btn_h = 24
+        btn_x2 = self.W - 35
+        btn_x1 = btn_x2 - btn_w
+        btn_y1 = y+45
+        btn_y2 = btn_y1 + btn_h
+        
+        draw_rounded_rect(self.canvas, btn_x1, btn_y1, btn_x2, btn_y2, 10, "#E0E0E0", tags=tag) 
+        self.canvas.create_text((btn_x1+btn_x2)/2, (btn_y1+btn_y2)/2, text="Detail", font=("Arial", 9, "bold"), fill="#555", tags=tag)
+
+        # Klik ITEM -> Tampilkan Detail
+        self.canvas.tag_bind(tag, "<Button-1>", lambda e, x=item: self.show_detail(x))
+        self.efek_hover(tag)
+
+    def show_detail(self, item):
+        self.clear_screen()
+        
+        # --- HEADER DETAIL ---
+        self.canvas.create_rectangle(0, 0, self.W, 100, fill=Theme.PRIMARY, outline="")
+        
+        # Back Button (Exact Replica of TopUp)
+        btn_back = ctk.CTkButton(self.canvas.master, text="←", font=("Arial", 24, "bold"), 
+                                 fg_color=Theme.WHITE, text_color=Theme.PRIMARY,
+                                 width=40, height=40, corner_radius=20, 
+                                 cursor="hand2", hover_color=Theme.BTN_HOVER_LIGHT,
+                                 bg_color=Theme.PRIMARY,
+                                 command=self.draw)
+        btn_back.place(x=20, y=30)
+        self.widgets.append(btn_back)
+        
+        self.canvas.create_text(self.W/2, 50, text="Detail Transaksi", font=Theme.F_HEAD, fill=Theme.WHITE)
+        
+        # --- CONTENT ---
+        y_start = 130
+        
+        # 1. Status Indicator (Circle Icon + Text)
+        circle_r = 30
+        cx, cy = self.W/2, y_start
+        self.canvas.create_oval(cx-circle_r, cy-circle_r, cx+circle_r, cy+circle_r, fill=Theme.BTN_GREEN, outline="")
+        self.canvas.create_text(cx, cy, text="✓", font=("Arial", 24, "bold"), fill="white")
+        
+        self.canvas.create_text(cx, cy+45, text="Transaksi Berhasil", font=("Arial", 14, "bold"), fill=Theme.PRIMARY)
+        
+        # 2. Amount (Hero)
+        sign = "+" if item['type'] == "in" else "-"
+        color = Theme.INCOME if item['type'] == "in" else Theme.EXPENSE
+        amount_str = f"{sign} Rp {item['amount']:,}".replace(",", ".")
+        
+        self.canvas.create_text(cx, cy+80, text=amount_str, font=("Arial", 28, "bold"), fill=color)
+        
+        # 3. Info Card
+        box_y = cy + 120
+        box_h = 240
+        box_margin = 30
+        card_w = self.W - (box_margin * 2)
+        
+        # Shadow Effect
+        draw_rounded_rect(self.canvas, box_margin+2, box_y+2, box_margin+card_w+2, box_y+box_h+2, 20, "#E0E0E0")
+        # Main Card
+        draw_rounded_rect(self.canvas, box_margin, box_y, box_margin+card_w, box_y+box_h, 20, Theme.WHITE)
+        
+        # Labels
+        labels = [
+            ("Judul", item['title']),
+            ("Tanggal", item['date']),
+            ("Kategori", "Pemasukan" if item['type'] == 'in' else "Pengeluaran"),
+            ("ID Transaksi", f"TRX-{item.get('id', 0):08d}")
+        ]
+        
+        py = box_y + 35
+        for i, (lbl, val) in enumerate(labels):
+            # Label (Left)
+            self.canvas.create_text(box_margin+20, py, text=lbl, anchor="w", font=("Arial", 11), fill="#757575")
+            
+            # Value (Right) -> Multiline handling if title is too long? For now keep simple right align
+            limit = 25
+            if len(str(val)) > limit:
+                val = str(val)[:limit] + "..."
+            
+            self.canvas.create_text(box_margin+card_w-20, py, text=str(val), anchor="e", font=("Arial", 12, "bold"), fill=Theme.TEXT)
+            
+            # Divider (except last item)
+            if i < len(labels) - 1:
+                line_y = py + 30
+                self.canvas.create_line(box_margin+20, line_y, box_margin+card_w-20, line_y, fill="#F5F5F5", width=1)
+            
+            py += 60
+            
     def draw_bottom_nav(self):
         y_bg = self.H - 90
         self.canvas.create_rectangle(0, y_bg, self.W, self.H, fill=Theme.WHITE, outline="#EEEEEE")

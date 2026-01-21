@@ -3,7 +3,7 @@ from tkinter import messagebox
 import os
 import sys
 
-# --- Setup Import Theme ---
+# --- Pengaturan Impor Tema ---
 current_dir = os.path.dirname(os.path.abspath(__file__)) 
 parent_dir = os.path.dirname(current_dir)
 if parent_dir not in sys.path:
@@ -33,12 +33,12 @@ class TransferView(ctk.CTkFrame):
         self.create_widgets()
 
     def create_widgets(self):
-        # 1. HEADER STANDARD
+        # 1. HEADER STANDAR
         header = ctk.CTkFrame(self, fg_color=Theme.PRIMARY, height=80, corner_radius=0)
         header.pack(fill="x", anchor="n")
         
-        ctk.CTkButton(header, text="←", font=("Arial", 24, "bold"), fg_color=Theme.WHITE, text_color=Theme.PRIMARY,
-                      width=40, height=40, corner_radius=20, cursor="hand2", hover_color=Theme.BTN_HOVER_LIGHT,
+        ctk.CTkButton(header, text="←", font=("Arial", 28), fg_color=Theme.WHITE, text_color=Theme.PRIMARY,
+                      width=45, height=45, corner_radius=25, cursor="hand2", hover_color=Theme.BTN_HOVER_LIGHT,
                       command=lambda: self.navigate_callback("home")).pack(side="left", padx=20, pady=10)
 
         ctk.CTkLabel(header, text="Transfer Saldo", font=("Arial", 18, "bold"), text_color=Theme.WHITE).pack(side="left", padx=10)
@@ -46,11 +46,11 @@ class TransferView(ctk.CTkFrame):
         saldo = f"Rp {self.user_data.get('saldo', 0):,}".replace(",", ".")
         ctk.CTkLabel(header, text=f"Saldo: {saldo}", font=("Arial", 12), text_color="#E8F5E9").pack(side="right", padx=20)
 
-        # 2. SCROLL CONTENT
+        # 2. KONTEN SCROLL
         self.scroll = ctk.CTkScrollableFrame(self, fg_color=Theme.BG)
         self.scroll.pack(fill="both", expand=True)
 
-        # 3. CARD INPUT
+        # 3. KARTU INPUT
         card = ctk.CTkFrame(self.scroll, fg_color=Theme.WHITE, corner_radius=15)
         card.pack(fill="x", padx=20, pady=20)
 
@@ -73,7 +73,7 @@ class TransferView(ctk.CTkFrame):
                                           fg_color="#F0F0F0", text_color=Theme.TEXT, font=("Arial", 14))
         self.entry_catatan.pack(fill="x", padx=20, pady=(0, 20))
 
-        # Quick Actions
+        # Aksi Cepat
         q_frame = ctk.CTkFrame(card, fg_color="transparent")
         q_frame.pack(fill="x", padx=20, pady=(0, 20))
         for amt in [50000, 100000, 200000, 500000]:
@@ -82,13 +82,13 @@ class TransferView(ctk.CTkFrame):
                           border_width=0, cursor="hand2", hover_color=Theme.BTN_HOVER_LIGHT,
                           command=lambda x=amt: self.set_nominal(x)).pack(side="left", padx=(0,10), expand=True, fill="x")
 
-        # Admin Fee Info (GRATIS)
+        # Info Biaya Admin (GRATIS)
         fee_box = ctk.CTkFrame(card, fg_color="#E8F5E9", corner_radius=8)
         fee_box.pack(fill="x", padx=20, pady=(0, 20))
         ctk.CTkLabel(fee_box, text="Biaya Admin: Rp 0 (Gratis)", 
                      text_color=Theme.PRIMARY, font=("Arial", 12, "bold")).pack(padx=15, pady=10)
 
-        # 4. HISTORY SECTION
+        # 4. BAGIAN RIWAYAT
         self.create_history()
 
         # 5. BUTTON ACTION
@@ -140,7 +140,7 @@ class TransferView(ctk.CTkFrame):
             ctk.CTkLabel(self.scroll, text="Belum ada riwayat", text_color=Theme.MUTED).pack(padx=20, anchor="w")
             return
 
-        # HORIZONTAL SCROLL CONTAINER
+        # KONTAINER SCROLL HORIZONTAL
         h_scroll = ctk.CTkScrollableFrame(self.scroll, height=130, orientation="horizontal", fg_color="transparent")
         h_scroll.pack(fill="x", padx=10, pady=5)
             
@@ -193,7 +193,7 @@ class TransferView(ctk.CTkFrame):
         self.entry_nomor.insert(0, n)
 
     def on_submit(self):
-        nomor = self.entry_nomor.get()
+        nomor = self.entry_nomor.get().strip()
         val = self.entry_nominal.get().replace(".", "")
         if not nomor:
             messagebox.showwarning("Error", "Isi nomor tujuan")

@@ -3,7 +3,7 @@ from tkinter import messagebox
 import os
 import sys
 
-# --- Setup Import Theme ---
+# --- Pengaturan Impor Tema ---
 current_dir = os.path.dirname(os.path.abspath(__file__)) 
 parent_dir = os.path.dirname(current_dir)
 if parent_dir not in sys.path:
@@ -35,7 +35,7 @@ class ListrikView(ctk.CTkFrame):
         self.create_widgets()
 
     def create_widgets(self):
-        # 1. HEADER STANDARD
+        # 1. HEADER STANDAR
         header = ctk.CTkFrame(self, fg_color=Theme.PRIMARY, height=80, corner_radius=0)
         header.pack(fill="x", anchor="n")
         
@@ -48,11 +48,11 @@ class ListrikView(ctk.CTkFrame):
         saldo = f"Rp {self.user_data.get('saldo', 0):,}".replace(",", ".")
         ctk.CTkLabel(header, text=f"Saldo: {saldo}", font=("Arial", 12), text_color="#E8F5E9").pack(side="right", padx=20)
 
-        # 2. SCROLL CONTENT
+        # 2. KONTEN SCROLL
         self.scroll = ctk.CTkScrollableFrame(self, fg_color=Theme.BG)
         self.scroll.pack(fill="both", expand=True)
 
-        # 3. CARD INPUT
+        # 3. KARTU INPUT
         card = ctk.CTkFrame(self.scroll, fg_color=Theme.WHITE, corner_radius=15)
         card.pack(fill="x", padx=20, pady=20)
 
@@ -76,7 +76,7 @@ class ListrikView(ctk.CTkFrame):
         for pkg in packages:
             self.create_pkg_item(card, pkg)
 
-        # 4. BUTTON ACTION
+        # 4. AKSI TOMBOL
         ctk.CTkButton(self.scroll, text="BELI TOKEN", font=Theme.F_BTN,
                       fg_color=Theme.PRIMARY, height=50, corner_radius=10, 
                       cursor="hand2", hover_color=Theme.BTN_HOVER_DARK,
@@ -119,12 +119,56 @@ class ListrikView(ctk.CTkFrame):
         self.pkg_buttons.append(frame)
 
     def on_submit(self):
-        if not self.entry_meter.get() or not self.selected_package:
+        meter_id = self.entry_meter.get().strip()
+        
+        if not meter_id or not self.selected_package:
             messagebox.showwarning("Error", "Lengkapi Data")
             return
-        
+            
+        # Validasi Nomor PLN
+        import backend.utils.validator as validator
+        if not validator.is_valid_pln_number(meter_id):
+            messagebox.showwarning("Error", "Nomor Meter Salah!\nHarus 11-12 digit angka.")
+            return
+
         self.transaction_callback("token", {
-            "meter": self.entry_meter.get(),
+            "meter": meter_id,
             "nominal": self.selected_package['nominal'],
             "harga": self.selected_package['harga']
         })
+
+class TokenResultView(ctk.CTkFrame):
+    def __init__(self, master, token_code, amount, back_to_home_callback):
+        super().__init__(master, fg_color=Theme.BG)
+        self.token_code = token_code
+        self.amount = amount
+        self.back_to_home_callback = back_to_home_callback
+        
+        self.create_widgets()
+        
+    def create_widgets(self):
+        # Kontainer Tengah
+        container = ctk.CTkFrame(self, fg_color=Theme.WHITE, corner_radius=20)
+        container.place(relx=0.5, rely=0.5, anchor="center", relwidth=0.85, relheight=0.6)
+        
+        # Ikon Sukses
+        ctk.CTkLabel(container, text="✅", font=("Arial", 60)).pack(pady=(40, 10))
+        ctk.CTkLabel(container, text="Transaksi Berhasil", font=Theme.F_HEAD, text_color=Theme.PRIMARY).pack(pady=(0, 20))
+        
+        # Nomor Token (Diformat 4-4-4-4-4)
+        formatted_token = " ".join([self.token_code[i:i+4] for i in range(0, len(self.token_code), 4)])
+        
+        token_label = ctk.CTkLabel(container, text=formatted_token, font=("Courier", 24, "bold"), text_color=Theme.TEXT)
+        token_label.pack(pady=20)
+        
+        # Info Salin
+        ctk.CTkLabel(container, text="Nomor Token Listrik", font=Theme.F_SMALL, text_color=Theme.MUTED).pack()
+        
+        # Amount
+        ctk.CTkLabel(container, text=f"Nominal: Rp {self.amount:,}".replace(",", "."), 
+                     font=Theme.F_BODY, text_color=Theme.TEXT).pack(pady=(20, 0))
+
+        # Tombol Beranda
+        ctk.CTkButton(container, text="Selesai", font=Theme.F_BTN,
+                      fg_color=Theme.PRIMARY, height=50, corner_radius=10,
+                      command=self.back_to_home_callback).pack(side="bottom", fill="x", padx=30, pady=30)

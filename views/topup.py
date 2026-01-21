@@ -3,7 +3,7 @@ from tkinter import messagebox
 import os
 import sys
 
-# --- Setup Import Theme ---
+# --- Pengaturan Impor Tema ---
 current_dir = os.path.dirname(os.path.abspath(__file__)) 
 parent_dir = os.path.dirname(current_dir)
 if parent_dir not in sys.path:
@@ -35,7 +35,7 @@ class TopUpView(ctk.CTkFrame):
         self.create_widgets()
 
     def create_widgets(self):
-        # 1. HEADER STANDARD
+        # 1. HEADER STANDAR
         header = ctk.CTkFrame(self, fg_color=Theme.PRIMARY, height=80, corner_radius=0)
         header.pack(fill="x", anchor="n")
         
@@ -48,11 +48,11 @@ class TopUpView(ctk.CTkFrame):
         saldo = f"Rp {self.user_data.get('saldo', 0):,}".replace(",", ".")
         ctk.CTkLabel(header, text=f"Saldo: {saldo}", font=("Arial", 12), text_color="#E8F5E9").pack(side="right", padx=20)
 
-        # 2. SCROLL CONTENT
+        # 2. KONTEN SCROLL
         self.scroll = ctk.CTkScrollableFrame(self, fg_color=Theme.BG)
         self.scroll.pack(fill="both", expand=True)
 
-        # 3. CARD INPUT
+        # 3. KARTU INPUT
         card = ctk.CTkFrame(self.scroll, fg_color=Theme.WHITE, corner_radius=15)
         card.pack(fill="x", padx=20, pady=20)
 
@@ -63,7 +63,7 @@ class TopUpView(ctk.CTkFrame):
         self.entry_nominal.pack(fill="x", padx=20, pady=(0, 15))
         self.entry_nominal.bind("<KeyRelease>", self.format_rupiah)
 
-        # Quick Actions
+        # Aksi Cepat
         q_frame = ctk.CTkFrame(card, fg_color="transparent")
         q_frame.pack(fill="x", padx=20, pady=(0, 20))
         for amt in [50000, 100000, 200000, 500000]:
@@ -72,7 +72,7 @@ class TopUpView(ctk.CTkFrame):
                           border_width=0, cursor="hand2", hover_color=Theme.BTN_HOVER_LIGHT,
                           command=lambda x=amt: self.set_nominal(x)).pack(side="left", padx=(0,10), expand=True, fill="x")
 
-        # 4. CARD METHOD
+        # 4. METODE KARTU
         ctk.CTkLabel(self.scroll, text="Metode Pembayaran", font=("Arial", 14, "bold"), text_color=Theme.TEXT).pack(anchor="w", padx=20, pady=(0, 10))
         
         methods = [
@@ -83,7 +83,7 @@ class TopUpView(ctk.CTkFrame):
         for m in methods:
             self.create_method_item(m)
 
-        # 5. BUTTON ACTION
+        # 5. AKSI TOMBOL
         ctk.CTkButton(self.scroll, text="LANJUTKAN TOP UP", font=Theme.F_BTN,
                       fg_color=Theme.PRIMARY, height=50, corner_radius=10, 
                       cursor="hand2", hover_color=Theme.BTN_HOVER_DARK,

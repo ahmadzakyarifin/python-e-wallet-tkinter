@@ -37,6 +37,7 @@ class User:
             "limit_pengeluaran": int(self.limit_pengeluaran),
             "riwayat_transaksi": [
                 {
+                    "id": t.id,
                     "title": t.description,
                     "date": t.date,
                     "amount": int(t.amount),
