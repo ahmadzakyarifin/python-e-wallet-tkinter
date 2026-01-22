@@ -121,22 +121,26 @@ class MainApp:
             messagebox.showerror("Gagal", msg)
 
     def handle_topup(self, nominal, metode):
-        if self.service.process_topup(nominal, metode):
+        success, msg = self.service.process_topup(nominal, metode)
+        if success:
             # Simulasi kode bayar
             kode = f"VA-88{random.randint(1000,9999)}"
-            messagebox.showinfo("Top Up", f"Permintaan diterima.\nKode Bayar: {kode}")
+            messagebox.showinfo("Top Up", f"Permintaan diterima.\nKode Bayar: {kode}\n\nNote: Saldo akan masuk otomatis.")
             self.show_page("home")
+        else:
+            # Menampilkan Pesan Error (Limit Penuh, dll)
+            messagebox.showerror("Top Up Gagal", msg)
 
     def handle_withdraw(self, nominal, admin, lokasi):
         # 1. Generate Code First
         code_val = "".join(random.choices(string.digits, k=6))
         
         # 2. Pass to Service to Store
-        # 2. Pass to Service to Store
-        if self.service.process_withdraw(nominal, admin, lokasi, code_val):
+        success, msg = self.service.process_withdraw(nominal, admin, lokasi, code_val)
+        if success:
             return code_val
         else:
-            messagebox.showerror("Gagal", "Saldo tidak mencukupi!")
+            messagebox.showerror("Gagal", f"Tarik Tunai Gagal:\n{msg}")
             return None
 
     def handle_ppob(self, tipe, data):
@@ -147,7 +151,8 @@ class MainApp:
             data['token'] = token_val
             data['trx_id'] = f"{random.randint(100000, 999999)}"
             
-            if self.service.process_ppob(tipe, data):
+            success, msg = self.service.process_ppob(tipe, data)
+            if success:
                 # SUKSES -> Tampilkan Halaman Receipt (TokenResultView)
                 self.clear_screen() # Bersihkan ListrikView
                 self.active_frame = TokenResultView(self.container, 
@@ -157,13 +162,17 @@ class MainApp:
                                                     back_to_home_callback=lambda: self.show_page("home"))
                 self.active_frame.pack(fill="both", expand=True)
                 return
+            else:
+                messagebox.showerror("Transaksi Gagal", msg)
+                return
         
         # PPOB Lain (Pulsa)
-        if self.service.process_ppob(tipe, data):
-            messagebox.showinfo("Sukses", "Transaksi Sedang Diproses")
+        success, msg = self.service.process_ppob(tipe, data)
+        if success:
+            messagebox.showinfo("Sukses", "Transaksi Berhasil")
             self.show_page("home")
         else:
-            messagebox.showerror("Gagal", "Saldo tidak mencukupi")
+            messagebox.showerror("Transaksi Gagal", msg)
 
     def handle_profile_edit(self, key, title, val):
         # ProfileFrame memanggil ini jika ingin update data, tapi logic save ada di dalam ProfileFrame
@@ -174,15 +183,16 @@ class MainApp:
 
     # Fungsi ini yang akan dipanggil tombol "Simpan" di ProfileFrame
     def handle_update_profile(self, key, new_val):
-        if self.service.update_info(key, new_val):
-            messagebox.showinfo("Sukses", "Data berhasil diperbarui")
+        success, msg = self.service.update_info(key, new_val)
+        if success:
+            messagebox.showinfo("Sukses", msg)
             # Refresh halaman profile
             if isinstance(self.active_frame, ProfileFrame):
                 # Update data lokal di UI lalu refresh
                 self.active_frame.user_data[key] = new_val 
                 self.active_frame.refresh_ui()
         else:
-            messagebox.showerror("Error", "Gagal update data")
+            messagebox.showerror("Gagal Update", msg)
 
     # Override ulang show_page khusus profile agar callback edit nyambung
     def show_page(self, page_name):

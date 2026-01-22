@@ -21,6 +21,7 @@ class User:
     pengeluaran: float
     target_pemasukan: float
     limit_pengeluaran: float
+    limit_pemasukan: float = 20000000.0
     riwayat_transaksi: List[Transaction] = field(default_factory=list)
 
     def to_dict(self):
@@ -33,6 +34,7 @@ class User:
             "pengeluaran": int(self.pengeluaran),
             "target_pemasukan": int(self.target_pemasukan),
             "limit_pengeluaran": int(self.limit_pengeluaran),
+            "limit_pemasukan": int(self.limit_pemasukan),
             "riwayat_transaksi": [
                 {
                     "id": t.id,

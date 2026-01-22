@@ -128,8 +128,8 @@ class TopUpView(ctk.CTkFrame):
 
     def on_submit(self):
         val = self.entry_nominal.get().replace(".", "")
-        if not val.isdigit() or int(val) < 10000:
-            messagebox.showwarning("Error", "Minimal Rp 10.000")
+        if not val.isdigit() or int(val) < 1000:
+            messagebox.showwarning("Error", "Minimal Rp 1.000")
             return
         if not self.selected_method:
             messagebox.showwarning("Error", "Pilih metode pembayaran")

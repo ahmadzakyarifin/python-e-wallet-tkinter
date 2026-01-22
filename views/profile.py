@@ -163,6 +163,16 @@ class ProfileFrame(ctk.CTkFrame):
         self.canvas.bind_all("<Button-4>", self.on_mousewheel)
         self.canvas.bind_all("<Button-5>", self.on_mousewheel)
 
+        # FIX LAYOUT: Force width update
+        def update_width(event=None):
+            w = self.canvas.winfo_width()
+            if w > 1:
+                self.canvas.itemconfig(self.canvas_window, width=w)
+        
+        self.canvas.bind("<Configure>", update_width)
+        # Call once immediately (after a brief delay to allow pack to finish)
+        self.after(100, update_width)
+
 
 
         # --- Header Profil ---
@@ -185,10 +195,16 @@ class ProfileFrame(ctk.CTkFrame):
         # level_label removed
         
         # --- STATISTIK LIMIT BULANAN (PENGGANTI LEVEL) ---
+        # --- STATISTIK LIMIT BULANAN (PENGGANTI LEVEL) ---
+        # Gunakan limit 20jt sebagai default (sesuai limit paten)
         limit_val = float(self.user_data.get('limit_pengeluaran', 20000000))
         used_val = float(self.user_data.get('pengeluaran', 0))
         
-        # Hitung persentase (Max 1.0)
+        # Sisa limit tidak boleh minus visualnya
+        remaining_val = limit_val - used_val
+        if remaining_val < 0: remaining_val = 0
+        
+        # Hitung persentase (Max 1.0 atau 100%)
         progress = used_val / limit_val if limit_val > 0 else 0
         if progress > 1.0: progress = 1.0
             
@@ -196,8 +212,8 @@ class ProfileFrame(ctk.CTkFrame):
         frame_limit.pack(pady=(0, 25), padx=20, fill="x")
         
         # Label Info
-        def format_juta(val):
-            return f"{val/1_000_000:g} jt"
+        def format_rupiah(val):
+            return f"Rp {val:,.0f}".replace(",", ".")
             
         import datetime
         nama_bulan = datetime.datetime.now().strftime("%B") # e.g. January
@@ -209,13 +225,18 @@ class ProfileFrame(ctk.CTkFrame):
         }
         bulan_str = bulan_indo.get(nama_bulan, nama_bulan)
 
-        lbl_info = ctk.CTkLabel(frame_limit, 
-                              text=f"Pengeluaran {bulan_str}: {format_juta(used_val)} / {format_juta(limit_val)}", 
-                              font=("Arial", 12), text_color="#E0E0E0")
-        lbl_info.pack(anchor="w", pady=(0, 5))
+        # Container Text Info
+        info_box = ctk.CTkFrame(frame_limit, fg_color="transparent")
+        info_box.pack(fill="x", pady=(0, 5))
         
+        lbl_title = ctk.CTkLabel(info_box, text=f"Pengeluaran {bulan_str}", font=Theme.F_SMALL, text_color="#E0E0E0")
+        lbl_title.pack(side="left")
+        
+        lbl_sisa = ctk.CTkLabel(info_box, text=f"Sisa: {format_rupiah(remaining_val)}", font=("Arial", 11, "bold"), text_color="#FFEB3B")
+        lbl_sisa.pack(side="right") # Sisa limit di kanan
+
         # Progress Bar
-        p_bar = ctk.CTkProgressBar(frame_limit, height=10, corner_radius=5)
+        p_bar = ctk.CTkProgressBar(frame_limit, height=12, corner_radius=6)
         p_bar.pack(fill="x")
         p_bar.set(progress)
         
@@ -226,6 +247,12 @@ class ProfileFrame(ctk.CTkFrame):
             p_bar.configure(progress_color="#FFEA00") # Yellow
         else:
             p_bar.configure(progress_color="#FF3D00") # Red
+        
+        # Text Detail Bawah Bar
+        lbl_detail = ctk.CTkLabel(frame_limit, 
+                              text=f"Terpakai: {format_rupiah(used_val)} / Limit: {format_rupiah(limit_val)}", 
+                              font=("Arial", 10), text_color="#BDBDBD")
+        lbl_detail.pack(anchor="w", pady=(2, 0))
 
         # --- Menu Items ---
         self.add_section_label("Informasi Akun")

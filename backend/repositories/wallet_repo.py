@@ -89,6 +89,20 @@ class WalletRepository:
                 conn.rollback()
                 return False, "Transfer gagal: Saldo penerima penuh (Max 10jt)"
 
+            # --- VALIDASI LIMIT BULANAN PENERIMA (MASUK) ---
+            now = datetime.now()
+            cur.execute("""
+                SELECT SUM(jumlah) FROM transaksi 
+                WHERE akun_id=%s AND tipe='MASUK' 
+                AND MONTH(created_at)=%s AND YEAR(created_at)=%s
+            """, (receiver_id, now.month, now.year))
+            res_monthly_in = cur.fetchone()
+            current_monthly_in = float(res_monthly_in[0] or 0)
+            
+            if current_monthly_in + amount > 20_000_000:
+                conn.rollback()
+                return False, "Transfer gagal: Limit bulanan penerima (20jt) terlampaui"
+
             # 2. Key & Cek Saldo Pengirim
             cur.execute("SELECT saldo FROM akun WHERE id=%s FOR UPDATE", (sender_id,))
             sender_saldo = float(cur.fetchone()[0])
@@ -149,13 +163,13 @@ class WalletRepository:
             cur.execute("SELECT saldo FROM akun WHERE id=%s FOR UPDATE", (user_id,))
             res = cur.fetchone()
             if not res:
-                return False
+                return False, "User tidak ditemukan"
             saldo = res[0]
 
             if tipe == "KELUAR":
                 if saldo < amount:
                     conn.rollback()
-                    return False
+                    return False, "Saldo tidak mencukupi"
                 
                 # --- VALIDASI LIMIT BULANAN (KELUAR) ---
                 now = datetime.now()
@@ -169,13 +183,28 @@ class WalletRepository:
                 
                 if current_monthly_out + amount > 20_000_000:
                     conn.rollback()
-                    return False
+                    return False, "Gagal: Limit pengeluaran bulanan (20jt) habis"
             
             elif tipe == "MASUK":
-                # --- VALIDASI HARD LIMIT SALDO (MASUK) ---
+                # --- VALIDASI LIMIT BULANAN (MASUK) ---
+                now = datetime.now()
+                cur.execute("""
+                    SELECT SUM(jumlah) FROM transaksi 
+                    WHERE akun_id=%s AND tipe='MASUK' 
+                    AND MONTH(created_at)=%s AND YEAR(created_at)=%s
+                """, (user_id, now.month, now.year))
+                res_monthly = cur.fetchone()
+                current_monthly_in = float(res_monthly[0] or 0)
+                
+                if current_monthly_in + amount > 20_000_000:
+                    conn.rollback()
+                    return False, "Top Up Gagal: Limit pemasukan bulanan (20jt) habis"
+
+                # --- VALIDASI SALDO MAKSIMAL (10jt) ---
                 if saldo + amount > 10_000_000:
                     conn.rollback()
-                    return False
+                    sisa = int(10_000_000 - saldo)
+                    return False, f"Gagal! Saldo akan melebihi 10jt.\nAnda hanya bisa Top Up maksimal Rp {sisa:,}".replace(",", ".")
 
             # masukkan transaksi
             cur.execute("""
@@ -190,12 +219,12 @@ class WalletRepository:
             """, (amount, user_id))
 
             conn.commit()
-            return True
+            return True, "Transaksi Berhasil"
 
         except Exception as e:
             conn.rollback()
             print("DB ERROR:", e)
-            return False
+            return False, "Terjadi kesalahan sistem"
         finally:
             conn.close()
 

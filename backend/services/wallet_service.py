@@ -71,7 +71,7 @@ class WalletService:
                 return False, "Format email tidak valid"
         elif key == "no_hp":
             if not validator.is_valid_phone(value):
-                return False, "Nomor HP tidak valid (08...)"
+                return False, "Nomor HP Salah!\nHarus diawali 08 dan 10-13 digit."
         elif key == "pin": # PIN acts as Password
             if not validator.is_valid_password(value):
                 return False, "Password lemah (min 8 char, huruf+angka)"
