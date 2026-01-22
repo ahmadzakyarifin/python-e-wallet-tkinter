@@ -86,7 +86,8 @@ class WithdrawView(ctk.CTkFrame):
         
         locs = [
             {"name": "ATM BCA", "fee": 0},
-            {"name": "ATM Lain", "fee": 6500},
+            {"name": "ATM BNI", "fee": 6500},
+            {"name": "ATM BRI", "fee": 6500},
             {"name": "Indomaret", "fee": 4500},
             {"name": "Alfamart", "fee": 4500},
         ]

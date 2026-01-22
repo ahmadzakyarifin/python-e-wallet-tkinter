@@ -113,11 +113,12 @@ class MainApp:
     # --- CALLBACK HANDLERS (Jembatan UI -> Service) ---
 
     def handle_transfer(self, nomor, nominal, catatan):
-        if self.service.process_transfer(nomor, nominal, catatan):
-            messagebox.showinfo("Sukses", "Transfer Berhasil!")
+        success, msg = self.service.process_transfer(nomor, nominal, catatan)
+        if success:
+            messagebox.showinfo("Sukses", msg)
             self.show_page("home")
         else:
-            messagebox.showerror("Gagal", "Saldo tidak mencukupi!")
+            messagebox.showerror("Gagal", msg)
 
     def handle_topup(self, nominal, metode):
         if self.service.process_topup(nominal, metode):

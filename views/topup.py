@@ -76,9 +76,11 @@ class TopUpView(ctk.CTkFrame):
         ctk.CTkLabel(self.scroll, text="Metode Pembayaran", font=("Arial", 14, "bold"), text_color=Theme.TEXT).pack(anchor="w", padx=20, pady=(0, 10))
         
         methods = [
-            {"name": "Transfer Bank", "icon": "🏦", "desc": "BCA, BNI, BRI, Mandiri"},
-            {"name": "Virtual Account", "icon": "💳", "desc": "Cek Otomatis"},
-            {"name": "Minimarket", "icon": "🏪", "desc": "Indomaret / Alfamart"},
+            {"name": "BCA Virtual Account", "icon": "🔵", "desc": "Cek Otomatis"},
+            {"name": "BNI Virtual Account", "icon": "🟠", "desc": "Cek Otomatis"},
+            {"name": "Mandiri VA", "icon": "🟡", "desc": "Cek Otomatis"},
+            {"name": "Indomaret", "icon": "🏪", "desc": "Bayar di Kasir"},
+            {"name": "Alfamart / Alfamidi", "icon": "🔴", "desc": "Bayar di Kasir"},
         ]
         for m in methods:
             self.create_method_item(m)
