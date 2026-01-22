@@ -55,11 +55,10 @@ class WalletRepository:
             email=u["email"],
             no_telp=u["no_telp"],
             saldo=float(u["saldo"]),
-            target_pemasukan=float(u.get("target_pemasukan", 10_000_000)),
-            limit_pengeluaran=float(u.get("limit_pengeluaran", 5_000_000)),
+            target_pemasukan=10_000_000,
+            limit_pengeluaran=20_000_000,
             pemasukan=float(stat["masuk"] or 0),
             pengeluaran=float(stat["keluar"] or 0),
-            level="Gold" if (stat["masuk"] or 0) > 1_000_000 else "Silver",
             riwayat_transaksi=riwayat
         )
 
@@ -81,6 +80,14 @@ class WalletRepository:
             if receiver_id == sender_id:
                 print("Cannot transfer to self")
                 return False, "Tidak bisa transfer ke diri sendiri"
+            
+            # --- VALIDASI HARD LIMIT PENERIMA ---
+            cur.execute("SELECT saldo FROM akun WHERE id=%s FOR UPDATE", (receiver_id,))
+            receiver_saldo = float(cur.fetchone()[0])
+            
+            if receiver_saldo + amount > 10_000_000:
+                conn.rollback()
+                return False, "Transfer gagal: Saldo penerima penuh (Max 10jt)"
 
             # 2. Key & Cek Saldo Pengirim
             cur.execute("SELECT saldo FROM akun WHERE id=%s FOR UPDATE", (sender_id,))
@@ -89,6 +96,20 @@ class WalletRepository:
             if sender_saldo < amount:
                 conn.rollback()
                 return False, "Saldo tidak mencukupi"
+
+            # --- VALIDASI LIMIT BULANAN PENGIRIM (TRANSFER ADALAH PENGELUARAN) ---
+            now = datetime.now()
+            cur.execute("""
+                SELECT SUM(jumlah) FROM transaksi 
+                WHERE akun_id=%s AND tipe='KELUAR' 
+                AND MONTH(created_at)=%s AND YEAR(created_at)=%s
+            """, (sender_id, now.month, now.year))
+            res_monthly = cur.fetchone()
+            current_monthly_out = float(res_monthly[0] or 0)
+            
+            if current_monthly_out + amount > 20_000_000:
+                conn.rollback()
+                return False, "Transfer gagal: Limit bulanan (20jt) terlampaui"
 
             # 3. Eksekusi Transfer
             # A. Kurangi Pengirim
@@ -131,9 +152,30 @@ class WalletRepository:
                 return False
             saldo = res[0]
 
-            if tipe == "KELUAR" and saldo < amount:
-                conn.rollback()
-                return False
+            if tipe == "KELUAR":
+                if saldo < amount:
+                    conn.rollback()
+                    return False
+                
+                # --- VALIDASI LIMIT BULANAN (KELUAR) ---
+                now = datetime.now()
+                cur.execute("""
+                    SELECT SUM(jumlah) FROM transaksi 
+                    WHERE akun_id=%s AND tipe='KELUAR' 
+                    AND MONTH(created_at)=%s AND YEAR(created_at)=%s
+                """, (user_id, now.month, now.year))
+                res_monthly = cur.fetchone()
+                current_monthly_out = float(res_monthly[0] or 0)
+                
+                if current_monthly_out + amount > 20_000_000:
+                    conn.rollback()
+                    return False
+            
+            elif tipe == "MASUK":
+                # --- VALIDASI HARD LIMIT SALDO (MASUK) ---
+                if saldo + amount > 10_000_000:
+                    conn.rollback()
+                    return False
 
             # masukkan transaksi
             cur.execute("""

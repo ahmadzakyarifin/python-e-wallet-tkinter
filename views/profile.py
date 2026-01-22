@@ -182,8 +182,50 @@ class ProfileFrame(ctk.CTkFrame):
         name_label = ctk.CTkLabel(header_container, text=nama_user, font=Theme.F_HEAD, text_color=Theme.WHITE)
         name_label.pack(pady=(5, 5))
 
-        level_label = ctk.CTkLabel(header_container, text=f"⭐ {self.user_data.get('level', 'Silver')} Member", font=Theme.F_BODY, text_color=Theme.WHITE)
-        level_label.pack(pady=(0, 30))
+        # level_label removed
+        
+        # --- STATISTIK LIMIT BULANAN (PENGGANTI LEVEL) ---
+        limit_val = float(self.user_data.get('limit_pengeluaran', 20000000))
+        used_val = float(self.user_data.get('pengeluaran', 0))
+        
+        # Hitung persentase (Max 1.0)
+        progress = used_val / limit_val if limit_val > 0 else 0
+        if progress > 1.0: progress = 1.0
+            
+        frame_limit = ctk.CTkFrame(header_container, fg_color="transparent")
+        frame_limit.pack(pady=(0, 25), padx=20, fill="x")
+        
+        # Label Info
+        def format_juta(val):
+            return f"{val/1_000_000:g} jt"
+            
+        import datetime
+        nama_bulan = datetime.datetime.now().strftime("%B") # e.g. January
+        # Translate simple
+        bulan_indo = {
+            "January": "Januari", "February": "Februari", "March": "Maret", "April": "April",
+            "May": "Mei", "June": "Juni", "July": "Juli", "August": "Agustus",
+            "September": "September", "October": "Oktober", "November": "November", "December": "Desember"
+        }
+        bulan_str = bulan_indo.get(nama_bulan, nama_bulan)
+
+        lbl_info = ctk.CTkLabel(frame_limit, 
+                              text=f"Pengeluaran {bulan_str}: {format_juta(used_val)} / {format_juta(limit_val)}", 
+                              font=("Arial", 12), text_color="#E0E0E0")
+        lbl_info.pack(anchor="w", pady=(0, 5))
+        
+        # Progress Bar
+        p_bar = ctk.CTkProgressBar(frame_limit, height=10, corner_radius=5)
+        p_bar.pack(fill="x")
+        p_bar.set(progress)
+        
+        # Warna indikator (Hijau aman, Kuning waspada, Merah bahaya)
+        if progress < 0.5:
+            p_bar.configure(progress_color="#00E676") # Green
+        elif progress < 0.8:
+            p_bar.configure(progress_color="#FFEA00") # Yellow
+        else:
+            p_bar.configure(progress_color="#FF3D00") # Red
 
         # --- Menu Items ---
         self.add_section_label("Informasi Akun")

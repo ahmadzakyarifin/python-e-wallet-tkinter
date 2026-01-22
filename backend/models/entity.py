@@ -21,7 +21,6 @@ class User:
     pengeluaran: float
     target_pemasukan: float
     limit_pengeluaran: float
-    level: str
     riwayat_transaksi: List[Transaction] = field(default_factory=list)
 
     def to_dict(self):
@@ -30,7 +29,6 @@ class User:
             "email": self.email,
             "no_hp": self.no_telp,
             "saldo": int(self.saldo),
-            "level": self.level,
             "pemasukan": int(self.pemasukan),
             "pengeluaran": int(self.pengeluaran),
             "target_pemasukan": int(self.target_pemasukan),
