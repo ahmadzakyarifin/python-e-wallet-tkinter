@@ -111,6 +111,9 @@ class LoginApp:
         ctk.CTkLabel(footer, text="Belum punya akun?", font=Theme.F_BODY, text_color="gray").pack(side="left")
         ctk.CTkButton(footer, text="Daftar", fg_color="transparent", text_color=Theme.PRIMARY, font=Theme.F_TITLE, hover=False, width=30, command=self.show_register_page).pack(side="left", padx=5)
 
+        # Forgot Password Link
+        ctk.CTkButton(content, text="Lupa Password?", fg_color="transparent", text_color=Theme.MUTED, font=("Arial", 11), hover=False, height=20, command=self.show_forgot_password_page).pack(fill="x", pady=(0, 10))
+
     def show_register_page(self):
         self.clear_frame()
         header = self.create_header_bg(height=250)
@@ -131,6 +134,7 @@ class LoginApp:
         ctk.CTkCheckBox(content, text="Saya setuju dengan S&K E-SAKU", variable=self.check_var, onvalue="on", offvalue="off", font=Theme.F_TITLE, text_color="gray", fg_color=Theme.PRIMARY, border_width=2, checkbox_width=20, checkbox_height=20).pack(fill="x", pady=(20, 10))
         ctk.CTkButton(content, text="BUAT AKUN", fg_color=Theme.PRIMARY, hover_color=Theme.HOVER_BTN, height=55, corner_radius=27, font=Theme.F_BTN, command=self.action_register).pack(fill="x", side="bottom", pady=10)
 
+
     # ================= PEMBANTU =================
     def create_label(self, parent, text, pady=5):
         ctk.CTkLabel(parent, text=text, font=Theme.F_TITLE, text_color=Theme.MUTED, anchor="w").pack(fill="x", pady=(pady, 0))
@@ -145,6 +149,90 @@ class LoginApp:
         entry = ctk.CTkEntry(parent, placeholder_text=placeholder, font=Theme.F_BODY, text_color=Theme.TEXT, fg_color=Theme.INPUT_BG, border_width=0, corner_radius=10, height=42, show="*" if is_pass else "")
         entry.pack(fill="x", pady=(2, 0))
         return entry
+
+    # ================= FORGOT PASSWORD =================
+    # ================= FORGOT PASSWORD PAGES =================
+    
+    def show_forgot_password_page(self):
+        self.clear_frame()
+        header = self.create_header_bg(height=280)
+        self.create_back_button(header)
+        ctk.CTkLabel(header, text="Lupa Password", font=Theme.F_HEAD, text_color="white").place(relx=0.5, rely=0.45, anchor="center")
+
+        card = ctk.CTkFrame(self.main_container, fg_color=Theme.WHITE, corner_radius=30)
+        card.place(relx=0.5, rely=0.6, anchor="center", relwidth=0.9, relheight=0.45) 
+        content = ctk.CTkFrame(card, fg_color="transparent")
+        content.pack(fill="both", expand=True, padx=30, pady=30)
+        
+        ctk.CTkLabel(content, text="Masukkan email Anda untuk menerima kode verifikasi.", font=Theme.F_BODY, text_color=Theme.MUTED, wraplength=300).pack(pady=(0, 20))
+
+        self.fp_email = self.create_entry(content, "Contoh: email@domain.com")
+        
+        ctk.CTkButton(content, text="Kirim Kode", fg_color=Theme.PRIMARY, hover_color=Theme.HOVER_BTN, height=55, corner_radius=27, font=Theme.F_BTN, command=self.handle_fp_step1).pack(fill="x", pady=20)
+
+    def handle_fp_step1(self):
+        email = self.fp_email.get()
+        if not email:
+            messagebox.showwarning("Info", "Masukkan email terlebih dahulu")
+            return
+            
+        success, res = self.auth_service.initiate_forgot_password(email)
+        if not success:
+            messagebox.showerror("Gagal", res)
+            return
+            
+        # Tampilkan OTP (Simulasi)
+        self.server_otp = res
+        self.target_email = email
+        messagebox.showinfo("Kode OTP", f"Kode OTP Anda: {res}\n(Simpan kode ini)")
+        
+        # Pindah ke halaman Reset
+        self.show_reset_password_page()
+
+    def show_reset_password_page(self):
+        self.clear_frame()
+        header = self.create_header_bg(height=250)
+        # Tombol kembali ke input email
+        btn = ctk.CTkButton(
+            header, text="←", width=45, height=45, corner_radius=22.5,         
+            fg_color=Theme.WHITE, text_color=Theme.PRIMARY, hover_color="#FAFAFA",
+            font=("Arial", 24, "bold"), command=self.show_forgot_password_page
+        )
+        btn.place(x=25, y=25)
+        
+        ctk.CTkLabel(header, text="Reset Password", font=Theme.F_HEAD, text_color="white").place(relx=0.5, rely=0.45, anchor="center")
+
+        card = ctk.CTkFrame(self.main_container, fg_color=Theme.WHITE, corner_radius=30)
+        card.place(relx=0.5, rely=0.6, anchor="center", relwidth=0.9, relheight=0.65) 
+        content = ctk.CTkFrame(card, fg_color="transparent")
+        content.pack(fill="both", expand=True, padx=25, pady=25)
+
+        self.create_label(content, "Kode OTP")
+        self.fp_otp = self.create_entry(content, "Masukan 4 digit kode")
+
+        self.create_label(content, "Password Baru", pady=15)
+        self.fp_pass = self.create_entry(content, "Min. 8 karakter", show="*")
+        
+        # Validation Note
+        ctk.CTkLabel(content, text="* Min. 8 karakter, harus ada huruf & angka.", font=("Arial", 10), text_color=Theme.DANGER, anchor="w").pack(fill="x", pady=(2, 0))
+
+        ctk.CTkButton(content, text="Simpan Password", fg_color=Theme.PRIMARY, hover_color=Theme.HOVER_BTN, height=55, corner_radius=27, font=Theme.F_BTN, command=self.handle_fp_step2).pack(fill="x", pady=20)
+
+    def handle_fp_step2(self):
+        otp = self.fp_otp.get()
+        new_pass = self.fp_pass.get()
+        
+        if otp != self.server_otp:
+            messagebox.showerror("Gagal", "Kode OTP salah!")
+            return
+            
+        success, msg = self.auth_service.reset_password(self.target_email, new_pass)
+        if success:
+            messagebox.showinfo("Sukses", "Password berhasil diubah, silakan login.")
+            self.show_login_page()
+        else:
+            # Jika gagal (misal validasi password), muncul error tapi tidak keluar halaman
+            messagebox.showerror("Gagal", msg)
 
     # ================= LOGIKA =================
     def action_login(self):

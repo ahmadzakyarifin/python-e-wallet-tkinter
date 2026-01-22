@@ -55,3 +55,23 @@ class AuthRepository:
             return False, str(e)
         finally:
             conn.close()
+
+    def check_email(self, email):
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT id FROM akun WHERE email=%s", (email,))
+        res = cur.fetchone()
+        conn.close()
+        return res[0] if res else None
+
+    def update_password_by_email(self, email, new_password):
+        try:
+            conn = get_db_connection()
+            cur = conn.cursor()
+            hashed = self._hash(new_password)
+            cur.execute("UPDATE akun SET password=%s WHERE email=%s", (hashed, email))
+            conn.commit()
+            conn.close()
+            return True
+        except Exception:
+            return False

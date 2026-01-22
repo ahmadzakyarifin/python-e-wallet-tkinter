@@ -7,7 +7,7 @@ import string
 from backend.services.wallet_service import WalletService
 from theme import Theme
 
-# --- IMPOR VIEW ANDA (Pastikan nama file dan class sesuai) ---
+# --- IMPORT VIEW ANDA (Pastikan nama file dan class sesuai) ---
 from views.login import LoginApp
 from views.home import HomeView
 from views.history import HistoryView
@@ -16,12 +16,11 @@ from views.fiturTransfer import TransferView
 from views.tarikTunai import WithdrawView
 from views.topup import TopUpView
 from views.fiturPulsa import PulsaView
-from views.fiturTokenListrik import ListrikView
+from views.fiturTokenListrik import ListrikView, TokenResultView
 
 class MainApp:
     def __init__(self, root, user_id, logout_callback):
         self.root = root
-        self.root.title("E-SAKU - Dashboard")
         self.logout_callback = logout_callback
         
         # Init Backend
@@ -31,14 +30,14 @@ class MainApp:
         self.root.geometry(f"{self.W}x{self.H}")
         self.root.configure(bg=Theme.BG)
 
-        # --- KONTAINER UTAMA ---
+        # --- CONTAINER UTAMA ---
         self.container = ctk.CTkFrame(self.root, fg_color=Theme.BG)
         self.container.pack(fill="both", expand=True)
 
-        # 1. Kanvas untuk Home & History
+        # 1. Canvas untuk Home & History
         self.canvas = ctk.CTkCanvas(self.container, width=self.W, height=self.H, bg=Theme.BG, highlightthickness=0)
         
-        # 2. Variabel untuk menyimpan Frame aktif (Transfer, Profile, dll)
+        # 2. Variable untuk menyimpan Frame aktif (Transfer, Profile, dll)
         self.active_frame = None
 
         self.show_page("home")
@@ -55,7 +54,7 @@ class MainApp:
             self.active_frame = None
 
     def get_user_dict(self):
-        """Ambil data terbaru dari DB dan konversi ke Dict untuk UI"""
+        """Ambil data terbaru dari DB dan convert ke Dict untuk UI"""
         user = self.service.get_current_user_data()
         if not user:
             messagebox.showerror("Error", "Gagal memuat data user")
@@ -63,7 +62,7 @@ class MainApp:
             return {}
         return user.to_dict()
 
-    # --- LOGIKA NAVIGASI ---
+    # --- NAVIGATION LOGIC ---
     def show_page(self, page_name):
         self.clear_screen()
         user_data = self.get_user_dict()
@@ -111,15 +110,14 @@ class MainApp:
             self.active_frame = ListrikView(self.container, user_data, self.show_page, self.handle_ppob)
             self.active_frame.pack(fill="both", expand=True)
 
-    # --- HANDLER CALLBACK (Jembatan UI -> Service) ---
+    # --- CALLBACK HANDLERS (Jembatan UI -> Service) ---
 
     def handle_transfer(self, nomor, nominal, catatan):
-        success, msg = self.service.process_transfer(nomor, nominal, catatan)
-        if success:
-            messagebox.showinfo("Sukses", msg)
+        if self.service.process_transfer(nomor, nominal, catatan):
+            messagebox.showinfo("Sukses", "Transfer Berhasil!")
             self.show_page("home")
         else:
-            messagebox.showerror("Gagal", msg)
+            messagebox.showerror("Gagal", "Saldo tidak mencukupi!")
 
     def handle_topup(self, nominal, metode):
         if self.service.process_topup(nominal, metode):
@@ -129,29 +127,40 @@ class MainApp:
             self.show_page("home")
 
     def handle_withdraw(self, nominal, admin, lokasi):
-        if self.service.process_withdraw(nominal, admin, lokasi):
-            # Return kode penarikan ke UI WithdrawView
-            return "".join(random.choices(string.digits, k=6))
+        # 1. Generate Code First
+        code_val = "".join(random.choices(string.digits, k=6))
+        
+        # 2. Pass to Service to Store
+        # 2. Pass to Service to Store
+        if self.service.process_withdraw(nominal, admin, lokasi, code_val):
+            return code_val
         else:
             messagebox.showerror("Gagal", "Saldo tidak mencukupi!")
             return None
 
     def handle_ppob(self, tipe, data):
         # Tipe: "pulsa" atau "token" (dikirim dari UI)
-        if self.service.process_ppob(tipe, data):
-            if tipe == "token":
-                # Generate Random Token 20 Digit
-                token = "".join([str(random.randint(0, 9)) for _ in range(20)])
-                
-                # Show Result View
-                from views.fiturTokenListrik import TokenResultView
-                self.clear_screen()
-                self.active_frame = TokenResultView(self.container, token, data['nominal'], 
+        if tipe == "token":
+            # 1. Simulasikan Generate Token (20 digit)
+            token_val = "".join(random.choices(string.digits, k=20))
+            data['token'] = token_val
+            data['trx_id'] = f"{random.randint(100000, 999999)}"
+            
+            if self.service.process_ppob(tipe, data):
+                # SUKSES -> Tampilkan Halaman Receipt (TokenResultView)
+                self.clear_screen() # Bersihkan ListrikView
+                self.active_frame = TokenResultView(self.container, 
+                                                    token_code=token_val,
+                                                    amount=data['harga'],
+                                                    data_transaksi=data,
                                                     back_to_home_callback=lambda: self.show_page("home"))
                 self.active_frame.pack(fill="both", expand=True)
-            else:
-                messagebox.showinfo("Sukses", "Transaksi Sedang Diproses")
-                self.show_page("home")
+                return
+        
+        # PPOB Lain (Pulsa)
+        if self.service.process_ppob(tipe, data):
+            messagebox.showinfo("Sukses", "Transaksi Sedang Diproses")
+            self.show_page("home")
         else:
             messagebox.showerror("Gagal", "Saldo tidak mencukupi")
 
@@ -164,16 +173,15 @@ class MainApp:
 
     # Fungsi ini yang akan dipanggil tombol "Simpan" di ProfileFrame
     def handle_update_profile(self, key, new_val):
-        success, msg = self.service.update_info(key, new_val)
-        if success:
-            messagebox.showinfo("Sukses", msg)
+        if self.service.update_info(key, new_val):
+            messagebox.showinfo("Sukses", "Data berhasil diperbarui")
             # Refresh halaman profile
             if isinstance(self.active_frame, ProfileFrame):
                 # Update data lokal di UI lalu refresh
                 self.active_frame.user_data[key] = new_val 
                 self.active_frame.refresh_ui()
         else:
-            messagebox.showerror("Error", msg)
+            messagebox.showerror("Error", "Gagal update data")
 
     # Override ulang show_page khusus profile agar callback edit nyambung
     def show_page(self, page_name):
@@ -225,7 +233,7 @@ class MainApp:
             self.container.destroy()
             self.logout_callback()
 
-# --- PENGENDALI APLIKASI (APP CONTROLLER) ---
+# --- APP CONTROLLER ---
 class AppController:
     def __init__(self):
         ctk.set_appearance_mode("Light")

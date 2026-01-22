@@ -138,37 +138,101 @@ class ListrikView(ctk.CTkFrame):
         })
 
 class TokenResultView(ctk.CTkFrame):
-    def __init__(self, master, token_code, amount, back_to_home_callback):
+    def __init__(self, master, token_code, amount, data_transaksi, back_to_home_callback):
         super().__init__(master, fg_color=Theme.BG)
         self.token_code = token_code
         self.amount = amount
+        self.data_transaksi = data_transaksi # Expect meter_id, etc.
         self.back_to_home_callback = back_to_home_callback
         
         self.create_widgets()
         
     def create_widgets(self):
-        # Kontainer Tengah
-        container = ctk.CTkFrame(self, fg_color=Theme.WHITE, corner_radius=20)
-        container.place(relx=0.5, rely=0.5, anchor="center", relwidth=0.85, relheight=0.6)
+        # 1. HEADER (Green with Back Button Style)
+        header_h = 120
+        header = ctk.CTkFrame(self, fg_color=Theme.PRIMARY, height=header_h, corner_radius=0)
+        header.pack(fill="x", anchor="n")
         
-        # Ikon Sukses
-        ctk.CTkLabel(container, text="✅", font=("Arial", 60)).pack(pady=(40, 10))
-        ctk.CTkLabel(container, text="Transaksi Berhasil", font=Theme.F_HEAD, text_color=Theme.PRIMARY).pack(pady=(0, 20))
+        # Header Title
+        ctk.CTkLabel(header, text="Detail Transaksi", font=("Arial", 18, "bold"), text_color="white").place(relx=0.5, rely=0.5, anchor="center")
         
-        # Nomor Token (Diformat 4-4-4-4-4)
-        formatted_token = " ".join([self.token_code[i:i+4] for i in range(0, len(self.token_code), 4)])
-        
-        token_label = ctk.CTkLabel(container, text=formatted_token, font=("Courier", 24, "bold"), text_color=Theme.TEXT)
-        token_label.pack(pady=20)
-        
-        # Info Salin
-        ctk.CTkLabel(container, text="Nomor Token Listrik", font=Theme.F_SMALL, text_color=Theme.MUTED).pack()
-        
-        # Amount
-        ctk.CTkLabel(container, text=f"Nominal: Rp {self.amount:,}".replace(",", "."), 
-                     font=Theme.F_BODY, text_color=Theme.TEXT).pack(pady=(20, 0))
+        # Back Button (Just acts as 'Selesai')
+        ctk.CTkButton(header, text="←", width=45, height=45, corner_radius=22.5,
+                      fg_color="white", text_color=Theme.PRIMARY, hover_color="#FAFAFA",
+                      bg_color=Theme.PRIMARY,
+                      font=("Arial", 24, "bold"), 
+                      command=self.back_to_home_callback).place(x=20, y=30)
 
-        # Tombol Beranda
-        ctk.CTkButton(container, text="Selesai", font=Theme.F_BTN,
-                      fg_color=Theme.PRIMARY, height=50, corner_radius=10,
+        # 2. STATUS SUKSES (Centered Overlay)
+        content_frame = ctk.CTkFrame(self, fg_color="transparent")
+        content_frame.pack(fill="both", expand=True, pady=(20, 0))
+        
+        # Icon Centered
+        icon_box = ctk.CTkFrame(content_frame, fg_color=Theme.BTN_GREEN, width=60, height=60, corner_radius=30)
+        icon_box.pack(pady=(10, 10))
+        ctk.CTkLabel(icon_box, text="✓", font=("Arial", 30, "bold"), text_color="white").place(relx=0.5, rely=0.5, anchor="center")
+        
+        ctk.CTkLabel(content_frame, text="Transaksi Berhasil", font=("Arial", 16, "bold"), text_color=Theme.PRIMARY).pack()
+        ctk.CTkLabel(content_frame, text=f"Rp {self.amount:,}".replace(",", "."), font=("Arial", 28, "bold"), text_color=Theme.EXPENSE).pack(pady=(5, 20))
+        
+        # 3. DETAIL CARD
+        card = ctk.CTkFrame(content_frame, fg_color="white", corner_radius=15)
+        card.pack(fill="x", padx=20)
+        
+        # Helper to create row
+        def add_row(lbl, val, is_bold=False, is_token=False):
+            row = ctk.CTkFrame(card, fg_color="transparent")
+            row.pack(fill="x", padx=15, pady=10)
+            
+            ctk.CTkLabel(row, text=lbl, font=("Arial", 12), text_color="#757575").pack(side="left")
+            
+            font_val = ("Arial", 12, "bold") if is_bold else ("Arial", 12)
+            if is_token: font_val = ("Arial", 14, "bold")  # Token lebih besar
+            
+            txt_val = ctk.CTkLabel(row, text=val, font=font_val, text_color=Theme.TEXT)
+            txt_val.pack(side="right")
+            
+            if is_token:
+                # Add copy button below or beside? Beside is tight. Let's add 'Salin' below token if needed, usually simple text is fine.
+                # User asked for "Struct".
+                pass
+
+        add_row("Judul", "Token Listrik")
+        add_row("No. Meter", self.data_transaksi.get('meter', '-'))
+        add_row("Nama Pelanggan", "USER E-WALLET") # Simulated
+        add_row("Tarif/Daya", "R1/1300VA")       # Simulated
+        
+        # DIVIDER
+        ctk.CTkFrame(card, height=1, fg_color="#F0F0F0").pack(fill="x", padx=15, pady=5)
+        
+        # TOKEN (Highlighted)
+        # Format: 1234 5678 9012 3456 7890
+        raw_token = self.token_code
+        fmt_token = " ".join([raw_token[i:i+4] for i in range(0, len(raw_token), 4)])
+        
+        token_frame = ctk.CTkFrame(card, fg_color="#E8F5E9", corner_radius=8)
+        token_frame.pack(fill="x", padx=15, pady=10)
+        
+        ctk.CTkLabel(token_frame, text="Token Listrik (Stroom)", font=("Arial", 11), text_color=Theme.PRIMARY).pack(pady=(10, 0))
+        ctk.CTkLabel(token_frame, text=fmt_token, font=("Arial", 18, "bold"), text_color=Theme.TEXT).pack(pady=(5, 10))
+        
+        # COPY BUTTON
+        btn_copy = ctk.CTkButton(token_frame, text="Salin Token", height=30, width=100, 
+                                 fg_color="white", text_color=Theme.PRIMARY, border_width=1, border_color=Theme.PRIMARY,
+                                 font=("Arial", 11, "bold"), hover_color="#F1F8E9",
+                                 command=lambda: self.salin_token(fmt_token))
+        btn_copy.pack(pady=(0, 15))
+        
+        # 4. FOOTER INFO
+        add_row("Waktu", "21 Jan 2026 18:45") # Simulated time or use real
+        add_row("ID Transaksi", f"TRX-{self.data_transaksi.get('trx_id', '0001')}")
+
+        # BUTTON SELESAI
+        ctk.CTkButton(self, text="SELESAI", font=Theme.F_BTN, fg_color=Theme.PRIMARY, height=50, corner_radius=25,
+                      hover_color=Theme.BTN_HOVER,
                       command=self.back_to_home_callback).pack(side="bottom", fill="x", padx=30, pady=30)
+
+    def salin_token(self, txt):
+        self.master.clipboard_clear()
+        self.master.clipboard_append(txt)
+        messagebox.showinfo("Disalin", "Token berhasil disalin!")

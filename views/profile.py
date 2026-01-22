@@ -111,6 +111,17 @@ class ProfileFrame(ctk.CTkFrame):
         self.content_frame = None
         self.show_main_profile_view()
 
+    def on_mousewheel(self, event):
+        try:
+             # Only scroll if this frame is visible
+            if self.winfo_exists() and self.winfo_ismapped():
+                if event.num == 5 or event.delta == -120:
+                    self.canvas.yview_scroll(1, "units")
+                elif event.num == 4 or event.delta == 120:
+                    self.canvas.yview_scroll(-1, "units")
+        except:
+            pass 
+
     def show_main_profile_view(self):
         """Menampilkan UI List Menu Profil"""
         if self.content_frame:
@@ -128,9 +139,31 @@ class ProfileFrame(ctk.CTkFrame):
                                  command=self.back_to_home_callback)
         btn_back.pack(side="left", padx=20, pady=10)
         
-        # --- 2. Area Scrollable ---
-        self.content_frame = ctk.CTkScrollableFrame(self, fg_color=Theme.BG)
-        self.content_frame.pack(fill="both", expand=True, pady=(0,0)) 
+        # --- 2. Area Scrollable (Custom Canvas for Hidden Scrollbar) ---
+        # Container for canvas
+        self.canvas_container = ctk.CTkFrame(self, fg_color=Theme.BG)
+        self.canvas_container.pack(fill="both", expand=True)
+        
+        self.canvas = ctk.CTkCanvas(self.canvas_container, bg=Theme.BG, highlightthickness=0)
+        self.canvas.pack(side="left", fill="both", expand=True)
+        
+        self.scrollbar = ctk.CTkScrollbar(self.canvas_container, orientation="vertical", command=self.canvas.yview)
+        # self.scrollbar.pack(side="right", fill="y") # HIDDEN
+        
+        self.canvas.configure(yscrollcommand=self.scrollbar.set)
+        
+        self.content_frame = ctk.CTkFrame(self.canvas, fg_color=Theme.BG)
+        self.canvas_window = self.canvas.create_window((0, 0), window=self.content_frame, anchor="nw")
+        
+        self.content_frame.bind("<Configure>", lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all")))
+        self.canvas.bind("<Configure>", lambda e: self.canvas.itemconfig(self.canvas_window, width=e.width))
+        
+        # Mousewheel binding
+        self.canvas.bind_all("<MouseWheel>", self.on_mousewheel)
+        self.canvas.bind_all("<Button-4>", self.on_mousewheel)
+        self.canvas.bind_all("<Button-5>", self.on_mousewheel)
+
+
 
         # --- Header Profil ---
         header_container = ctk.CTkFrame(self.content_frame, fg_color=Theme.PRIMARY, corner_radius=0)

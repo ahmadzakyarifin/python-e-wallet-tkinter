@@ -156,14 +156,60 @@ class WithdrawView(ctk.CTkFrame):
             self.show_success(kode, int(val), self.selected_loc)
 
     def show_success(self, kode, nominal, lokasi):
+        # Format Kode: 123456 -> 123 456
+        fmt_kode = " ".join([kode[i:i+3] for i in range(0, len(kode), 3)])
+        
         win = ctk.CTkToplevel(self)
         win.title("Kode Penarikan")
-        win.geometry("350x400")
-        win.grab_set()
+        win.geometry("400x550")
+        win.resizable(False, False)
         
-        ctk.CTkLabel(win, text="✅", font=("Arial", 60)).pack(pady=(40,10))
-        ctk.CTkLabel(win, text="KODE: " + kode, font=("Arial", 30, "bold"), text_color=Theme.PRIMARY).pack(pady=10)
-        ctk.CTkLabel(win, text=f"Limit 15 Menit\nDi {lokasi}", font=("Arial", 12), text_color=Theme.MUTED).pack()
+        # FIX CRASH: Wait for window to be visible before grabbing focus
+        win.lift()
+        win.focus_force()
+        # win.grab_set() # Optional, sometimes causes issues if too fast. Let's rely on focus.
+
+        # Container Utama (Putih)
+        bg = ctk.CTkFrame(win, fg_color="white", corner_radius=0)
+        bg.pack(fill="both", expand=True)
+
+        # Header
+        ctk.CTkLabel(bg, text="Kode Penarikan", font=("Arial", 18, "bold"), text_color="#333").pack(pady=(25, 5))
+        ctk.CTkLabel(bg, text=f"Merchant: {lokasi.split(' ')[-1]}", font=("Arial", 12), text_color="gray").pack()
+
+        # Kartu Kode (Tengah)
+        # Visual Barcode (Simulasi dengan garis-garis)
+        barcode_frame = ctk.CTkFrame(bg, fg_color="transparent")
+        barcode_frame.pack(pady=(30, 10))
         
-        ctk.CTkButton(win, text="Tutup", fg_color=Theme.PRIMARY, height=40, 
-                      command=lambda: [win.destroy(), self.navigate_callback("home")]).pack(pady=40, padx=40, fill="x")
+        # Drawing fake barcode using frame stripes
+        for _ in range(25):
+            w = 2 if _ % 3 == 0 else 4
+            h = 60
+            f = ctk.CTkFrame(barcode_frame, width=w, height=h, fg_color="#333", corner_radius=0)
+            f.pack(side="left", padx=1)
+
+        ctk.CTkLabel(bg, text=fmt_kode, font=("Arial", 32, "bold"), text_color=Theme.PRIMARY).pack(pady=(10, 5))
+        
+        # Info Berlaku
+        limit_time = "15 Menit" # In real app, calculate actual time
+        ctk.CTkLabel(bg, text=f"Berlaku dalam {limit_time}", font=("Arial", 12), text_color="#F57C00").pack(pady=(0, 20))
+
+        # Instructions
+        note_frame = ctk.CTkFrame(bg, fg_color="#F1F8E9", corner_radius=10)
+        note_frame.pack(fill="x", padx=30, pady=10)
+        
+        steps = [
+            f"1. Pergi ke kasir/ATM {lokasi}",
+            "2. Info 'Tarik Tunai Tanpa Kartu'",
+            "3. Tunjukkan Kode Penarikan",
+            f"4. Ambil uang Rp {nominal:,}".replace(",", ".")
+        ]
+        
+        for step in steps:
+            ctk.CTkLabel(note_frame, text=step, font=("Arial", 12), text_color="#333", anchor="w").pack(fill="x", padx=15, pady=3)
+
+        # Tombol Tutup
+        ctk.CTkButton(bg, text="TUTUP", font=Theme.F_BTN, fg_color=Theme.PRIMARY, height=50, corner_radius=25,
+                      hover_color=Theme.BTN_HOVER,
+                      command=lambda: [win.destroy(), self.navigate_callback("home")]).pack(side="bottom", fill="x", padx=30, pady=30)
